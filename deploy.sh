@@ -4,6 +4,7 @@ date
 echo "StrictHostKeyChecking no" > ~/.ssh/config 
 
 #Install with Kubeadm
+#STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh"
 STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 12-cleanup.sh"
 #STEP_SCRIPTS="02-certs.sh 02-use_kubeadm_install_cluster.sh"
 
@@ -26,7 +27,7 @@ do
 	bash -xv $SCRIPT > "${SCRIPT}.log" 2>&1
 	ls -lh "${SCRIPT}.log"
 	if [ $? -ne 0 ]; then
-		echo "ERROR: $SCRIPT Failed. See ${SCRIPT} for details.  Exiting now."
+		echo "ERROR: $SCRIPT Failed. See ${SCRIPT} for details.  Cleaning up resources and exiting now."
 		bash -xv 12-cleanup.sh > 12-cleanup.sh.log 2>&1
 		break
 	fi
