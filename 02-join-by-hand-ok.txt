@@ -1,0 +1,73 @@
+barnabas:aws burvil$ scp -i kubernetes.id_rsa -r ubuntu@34.214.224.99:.kube .
+config                                                          100% 5445   132.3KB/s   00:00
+barnabas:aws burvil$ scp -i kubernetes.id_rsa -r .kube ubuntu@52.27.142.218:
+config                                                          100% 5445   117.0KB/s   00:00
+barnabas:aws burvil$ ssh -i kubernetes.id_rsa ubuntu@52.27.142.218 "kubeadm join 10.0.1.10:6443 --token wkxsqq.jmeqzvua846ti383 --discovery-token-ca-cert-hash sha256:1310a1a6c5f31c553b9a55f7d30ba44752a463c11da1243dcbf35444a9e5309a"
+[preflight] Running pre-flight checks
+W0404 19:35:51.552998   10162 join.go:346] [preflight] WARNING: JoinControlPane.controlPlane settings will be ignored when control-plane flag is not set.
+error execution phase preflight: [preflight] Some fatal errors occurred:
+	[ERROR IsPrivilegedUser]: user is not running as root
+[preflight] If you know what you are doing, you can make a check non-fatal with `--ignore-preflight-errors=...`
+To see the stack trace of this error execute with --v=5 or higher
+barnabas:aws burvil$ ssh -i kubernetes.id_rsa ubuntu@52.27.142.218 "sudo kubeadm join 10.0.1.10:6443 --token wkxsqq.jmeqzvua846ti383 --discovery-token-ca-cert-hash sha256:1310a1a6c5f31c553b9a55f7d30ba44752a463c11da1243dcbf35444a9e5309a"
+[preflight] Running pre-flight checks
+W0404 19:36:20.588774   10349 join.go:346] [preflight] WARNING: JoinControlPane.controlPlane settings will be ignored when control-plane flag is not set.
+	[WARNING IsDockerSystemdCheck]: detected "cgroupfs" as the Docker cgroup driver. The recommended driver is "systemd". Please follow the guide at https://kubernetes.io/docs/setup/cri/
+[preflight] Reading configuration from the cluster...
+[preflight] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -oyaml'
+[kubelet-start] Downloading configuration for the kubelet from the "kubelet-config-1.18" ConfigMap in the kube-system namespace
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Starting the kubelet
+[kubelet-start] Waiting for the kubelet to perform the TLS Bootstrap...
+
+This node has joined the cluster:
+* Certificate signing request was sent to apiserver and a response was received.
+* The Kubelet was informed of the new secure connection details.
+
+Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
+
+barnabas:aws burvil$ ssh -i kubernetes.id_rsa ubuntu@54.149.56.207 "sudo kubeadm join 10.0.1.10:6443 --token wkxsqq.jmeqzvua846ti383 --discovery-token-ca-cert-hash sha256:1310a1a6c5f31c553b9a55f7d30ba44752a463c11da1243dcbf35444a9e5309a"
+[preflight] Running pre-flight checks
+W0404 19:37:17.237982    9834 join.go:346] [preflight] WARNING: JoinControlPane.controlPlane settings will be ignored when control-plane flag is not set.
+	[WARNING IsDockerSystemdCheck]: detected "cgroupfs" as the Docker cgroup driver. The recommended driver is "systemd". Please follow the guide at https://kubernetes.io/docs/setup/cri/
+[preflight] Reading configuration from the cluster...
+[preflight] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -oyaml'
+[kubelet-start] Downloading configuration for the kubelet from the "kubelet-config-1.18" ConfigMap in the kube-system namespace
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Starting the kubelet
+[kubelet-start] Waiting for the kubelet to perform the TLS Bootstrap...
+
+This node has joined the cluster:
+* Certificate signing request was sent to apiserver and a response was received.
+* The Kubelet was informed of the new secure connection details.
+
+Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
+
+barnabas:aws burvil$ ssh -i kubernetes.id_rsa ubuntu@34.214.224.99
+Welcome to Ubuntu 18.04.4 LTS (GNU/Linux 4.15.0-1063-aws x86_64)
+
+ * Documentation:  https://help.ubuntu.com
+ * Management:     https://landscape.canonical.com
+ * Support:        https://ubuntu.com/advantage
+
+  System information as of Sat Apr  4 19:38:06 UTC 2020
+
+  System load:  0.1               Processes:              114
+  Usage of /:   5.7% of 48.41GB   Users logged in:        0
+  Memory usage: 63%               IP address for ens5:    10.0.1.10
+  Swap usage:   0%                IP address for docker0: 172.17.0.1
+
+
+9 packages can be updated.
+9 updates are security updates.
+
+
+Last login: Sat Apr  4 19:30:06 2020 from 23.242.192.189
+ubuntu@ip-10-0-1-10:~$ kubectl get nodes
+NAME           STATUS     ROLES    AGE    VERSION
+ip-10-0-1-10   NotReady   master   19m    v1.18.0
+ip-10-0-1-20   NotReady   <none>   111s   v1.18.0
+ip-10-0-1-21   NotReady   <none>   54s    v1.18.0
+ubuntu@ip-10-0-1-10:~$

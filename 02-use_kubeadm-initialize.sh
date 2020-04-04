@@ -10,6 +10,7 @@ sudo which kubeadm
 which kubeadm
 
 mkdir -p $HOME/.kube
+ls -l /etc/kubernetes/admin.conf
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
