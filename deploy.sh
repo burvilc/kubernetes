@@ -4,8 +4,8 @@ date
 echo "StrictHostKeyChecking no" > ~/.ssh/config 
 
 #Install with Kubeadm
-#STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh"
-STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 12-cleanup.sh"
+STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh"
+#STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 12-cleanup.sh"
 #STEP_SCRIPTS="02-certs.sh 02-use_kubeadm_install_cluster.sh"
 
 # Following steps run for Kubernetes the Hard Way; seems to have problems from time to time bootstrapping etcd...

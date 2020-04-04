@@ -33,19 +33,26 @@ for INSTANCE in worker-0 worker-1 controller-0 ; do
 		#	INIT_DONE=1
 		#fi
 	fi
+	if [[ $INSTANCE =~ controller-0 ]]; then
+		MAIN_CONTROLLER_IP=$EXTERNAL_IP
+	fi	
   done
 done
 
+scp -i kubernetes.id_rsa -r ubuntu@${MAIN_CONTROLLER_IP}:.kube .
+
 #for INSTANCE in worker-0 worker-1 controller-0 controller-1; do
-for INSTANCE in worker-0 worker-1 controller-0 ; do
+# controller comes first, so can get join command
+for INSTANCE in worker-0 worker-1 ; do
 	EXTERNAL_IP=$(aws ec2 describe-instances \
     	--filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=running" \
     	--output text --query 'Reservations[].Instances[].PublicIpAddress')
-	if [[ $INSTANCE =~ controller-0 ]]; then
-		CMD="source set-var.sh; sudo kubeadm token create --print-join-command"
-  		JOIN_CMD="sudo "
-		JOIN_CMD+=`ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "${CMD}"`
-  		ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "source set-var.sh; ${JOIN_CMD}; sleep 60; kubectl get nodes; kubectl get pods -n kube-system"
-	fi	
+	scp -i kubernetes.id_rsa -r .kube ubuntu@${EXTERNAL_IP}:.
+	CMD="source set-var.sh; sudo kubeadm token create --print-join-command"
+  	JOIN_CMD="sudo "
+	JOIN_CMD+=`ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "${CMD}"`
+  	ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "source set-var.sh; ${JOIN_CMD}"
 done
+sleep 60
+ssh -i kubernetes.id_rsa ubuntu@$MAIN_CONTROLLER_IP "source set-var.sh; kubectl get nodes; kubectl get pods -n kube-system"
 
