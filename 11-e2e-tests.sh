@@ -1,19 +1,11 @@
 #!/bin/bash
 
-wget https://dl.google.com/go/go1.14.1.linux-amd64.tar.gz
+INSTANCE="controller-0"
+EXTERNAL_IP=$(aws ec2 describe-instances \
+    	--filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=running" \
+    	--output text --query 'Reservations[].Instances[].PublicIpAddress')
+SCRIPT="11-e2e-tests_on-controller.sh"
+scp -i kubernetes.id_rsa $SCRIPT ubuntu@${EXTERNAL_IP}:.
+ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "source set-var.sh; bash -xv ${SCRIPT}"
 
-sudo tar -C /usr/local -xzf go1.14.1.linux-amd64.tar.gz
-export GOPATH="${HOME}/go"
-export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 
-go get -v -u k8s.io/test-infra/kubetest
-
-kubetest --extract=v1.18.0
-
-cd kubernetes
-
-export KUBE_MASTER_IP_ADDR=`ip addr | egrep -A 3 ens5 | grep inet | grep -v inet6 | awk {'print $2'}  | sed 's/\/24//g'`
-export KUBE_MASTER_IP="${KUBE_MASTER_IP_ADDR}:6443"
-export KUBE_MASTER="controller-0"
-
-kubetest --test --provider=skeleton --test_args="--ginkgo.focus=\[Conformance\]" | tee test.out

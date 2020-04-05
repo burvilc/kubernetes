@@ -87,7 +87,8 @@ chmod 600 kubernetes.id_rsa
 # Kubernetes Controllers
 #Using t3.micro instances
 
-for i in 0 1 2; do
+#for i in 0 1 2; do
+for i in 0 ; do
   instance_id=$(aws ec2 run-instances \
     --associate-public-ip-address \
     --image-id ${IMAGE_ID} \
@@ -107,7 +108,8 @@ done
 
 #########################
 #Kubernetes Workers
-for i in 0 1 2; do
+#for i in 0 1 2; do
+for i in 0 1 ; do
   instance_id=$(aws ec2 run-instances \
     --associate-public-ip-address \
     --image-id ${IMAGE_ID} \

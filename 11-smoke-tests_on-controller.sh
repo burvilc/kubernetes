@@ -12,6 +12,7 @@ sudo ETCDCTL_API=3 etcdctl get --endpoints=https://127.0.0.1:2379 --cacert=/etc/
 
 #Create a deployment for the nginx web server:
 kubectl create deployment nginx --image=nginx
+sleep 60
 
 #List the pod created by the nginx deployment:
 kubectl get pods -l app=nginx
