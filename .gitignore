@@ -1,0 +1,9 @@
+*.pem
+*.key
+*.csr
+*.log
+tmp*
+*.tgz
+*.gz
+*.tar
+*.zip
