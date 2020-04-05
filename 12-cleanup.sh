@@ -15,10 +15,12 @@ aws ec2 delete-key-pair --key-name kubernetes
 aws elbv2 delete-load-balancer --load-balancer-arn "${LOAD_BALANCER_ARN}"
 
 # Give enough time after load balancer deletion so it removes IP, etc. as well as EC2 instances to be fully terminated.
-sleep 420
+sleep 120
 
 aws elbv2 delete-target-group --target-group-arn "${TARGET_GROUP_ARN}"
 aws ec2 delete-security-group --group-id "${SECURITY_GROUP_ID}"
+sleep 120
+
 ROUTE_TABLE_ASSOCIATION_ID="$(aws ec2 describe-route-tables \
   --route-table-ids "${ROUTE_TABLE_ID}" \
   --output text --query 'RouteTables[].Associations[].RouteTableAssociationId')"
