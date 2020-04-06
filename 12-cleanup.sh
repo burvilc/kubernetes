@@ -1,5 +1,7 @@
 #!/bin/sh
 
+RESULT=1
+
 #Delete the controller and worker compute instances:
 
 aws ec2 terminate-instances \
@@ -12,14 +14,33 @@ aws ec2 delete-key-pair --key-name kubernetes
 #Networking
 #Delete the external load balancer network resources:
 
-aws elbv2 delete-load-balancer --load-balancer-arn "${LOAD_BALANCER_ARN}"
+INSTANCE_IDS=""
+INSTANCE_IDS= $(aws ec2 describe-instances \
+      --filters "Name=tag:Name,Values=controller-0,controller-1,controller-2,worker-0,worker-1,worker-2" \
+		"Name=instance-state-name,Values=running" \
+      --output text --query 'Reservations[].Instances[].InstanceId')
+
+while [ -n "${RESULT}" -a  "${RESULT}" -ne 0 ]; do
+	aws elbv2 delete-load-balancer --load-balancer-arn "${LOAD_BALANCER_ARN}"
+	RESULT=$?
+	sleep 20
+done
+
+while [ -n "${INSTANCE_IDS}" ]; do
+	sleep 30
+done
 
 # Give enough time after load balancer deletion so it removes IP, etc. as well as EC2 instances to be fully terminated.
-sleep 120
+sleep 60
 
 aws elbv2 delete-target-group --target-group-arn "${TARGET_GROUP_ARN}"
-aws ec2 delete-security-group --group-id "${SECURITY_GROUP_ID}"
-sleep 120
+RESULT=1
+while [ -n "${RESULT}" -a "${RESULT}" -ne 0 ]; do
+	aws ec2 delete-security-group --group-id "${SECURITY_GROUP_ID}"
+	RESULT=$?
+	sleep 20
+done
+sleep 30
 
 ROUTE_TABLE_ASSOCIATION_ID="$(aws ec2 describe-route-tables \
   --route-table-ids "${ROUTE_TABLE_ID}" \
