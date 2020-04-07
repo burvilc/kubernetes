@@ -4,6 +4,7 @@ date
 echo "StrictHostKeyChecking no" > ~/.ssh/config 
 
 #Install with Kubeadm
+#STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 11-smoke-tests.sh 11-e2e-tests.sh"
 STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 11-smoke-tests.sh 11-e2e-tests.sh 12-cleanup.sh"
 #STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 12-cleanup.sh"
 #STEP_SCRIPTS="02-certs.sh 02-use_kubeadm_install_cluster.sh"

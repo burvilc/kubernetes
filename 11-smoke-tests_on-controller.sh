@@ -4,8 +4,15 @@
 #Create a generic secret:
 kubectl create secret generic kubernetes-the-hard-way --from-literal="mykey=mydata"
 
+export RELEASE="3.3.13"
+wget https://github.com/etcd-io/etcd/releases/download/v${RELEASE}/etcd-v${RELEASE}-linux-amd64.tar.gz
+tar xvf etcd-v${RELEASE}-linux-amd64.tar.gz
+cd etcd-v${RELEASE}-linux-amd64
+sudo mv etcd etcdctl /usr/local/bin
+
 #Print a hexdump of the kubernetes-the-hard-way secret stored in etcd:
-sudo ETCDCTL_API=3 etcdctl get --endpoints=https://127.0.0.1:2379 --cacert=/etc/etcd/ca.pem --cert=/etc/etcd/kubernetes.pem --key=/etc/etcd/kubernetes-key.pem /registry/secrets/default/kubernetes-the-hard-way | hexdump -C
+ETCD_CERTS_DIR="/etc/kubernetes/pki/etcd"
+sudo ETCDCTL_API=3 etcdctl get --endpoints=https://127.0.0.1:2379 --cacert=${ETCD_CERTS_DIR}/ca.crt --cert=${ETCD_CERTS_DIR}/server.crt --key=${ETCD_CERTS_DIR}/server.key /registry/secrets/default/kubernetes-the-hard-way | hexdump -C
 
 #Deployments - To be run on local laptop
 #In this section you will verify the ability to create and manage Deployments.
@@ -24,8 +31,10 @@ kubectl get pods -l app=nginx
 kubectl expose deploy nginx --type=NodePort --port 80
 
 PORT_NUMBER=$(kubectl get svc -l app=nginx -o jsonpath="{.items[0].spec.ports[0].nodePort}")
-curl http://worker-1:$PORT_NUMBER
-curl http://worker-2:$PORT_NUMBER
+WORKERHOSTNAMES=`kubectl get nodes | grep -v master | grep -v NAME | awk {'print $1'}`
+for W in $WORKERHOSTNAMES; do
+	curl http://${W}:$PORT_NUMBER
+done
 
 
 #Retrieve the full name of the nginx pod:

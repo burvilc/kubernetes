@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#wget https://dl.google.com/go/go1.14.1.linux-amd64.tar.gz
+
+#sudo tar -C /usr/local -xzf go1.14.1.linux-amd64.tar.gz
+
+sudo add-apt-repository ppa:longsleep/golang-backports
+sudo apt update
+sudo apt install golang-go
+
+export GOPATH="${HOME}/go"
+export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+which go
+find $HOME -name go
+find /usr/local -name go
+

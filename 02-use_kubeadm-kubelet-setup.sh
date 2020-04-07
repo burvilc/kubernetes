@@ -29,7 +29,7 @@ echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selecti
 #Following two chmod not for production...
 sudo chmod 777 /var/cache/debconf/
 sudo chmod 777 /var/cache/debconf/passwords.dat
-sudo apt-get update && sudo apt-get install -y -o Dpkg::Options::="--force-confnew" apt-transport-https curl ca-certificates software-properties-common
+sudo apt-get update && sudo apt-get install -y -o Dpkg::Options::="--force-confnew" apt-transport-https curl ca-certificates software-properties-common 
 #Ensure iptables tooling does not use the nftables backend
 #Ubuntu 
 # ensure legacy binaries are installed
