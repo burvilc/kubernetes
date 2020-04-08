@@ -7,3 +7,6 @@ tmp*
 *.gz
 *.tar
 *.zip
+*.id_rsa
+*.kubeconfig
+set-var.sh

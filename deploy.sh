@@ -3,8 +3,7 @@
 date
 echo "StrictHostKeyChecking no" > ~/.ssh/config 
 
-#Teardown resources after deployed - 1 means resources will be deleted
-CLEANUP=1
+. 00-config.sh
 
 #Install with Kubeadm
 #STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 11-smoke-tests.sh 11-e2e-tests.sh"

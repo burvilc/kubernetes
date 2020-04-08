@@ -1,9 +1,10 @@
 #!/bin/bash
 
 #sudo add-apt-repository -y ppa:longsleep/golang-backports
-#sudo apt update -y
+sudo apt update -y
 #sudo apt install -y golang-go python3 python python-minimal python-pip gnupg unzip
 #sudo apt install -y golang-go 
+sudo apt install -y jq
 
 #export GOPATH="${HOME}/go"
 #export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
@@ -19,6 +20,10 @@ which ${EXE}
 #sudo find $HOME -name ${EXE} 
 
 ${EXE} run --mode=certified-conformance --wait
+date
+
 RESULTS=$(${EXE} retrieve)
 
-${EXE} e2e $RESULTS 
+${EXE} status --json | jq '.'
+${EXE} e2e $RESULTS --mode=certified-conformance
+${EXE} results $RESULTS --mode=detailed
