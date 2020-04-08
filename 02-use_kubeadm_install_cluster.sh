@@ -25,7 +25,7 @@ for INSTANCE in worker-0 worker-1 controller-0 ; do
 	echo "INSTANCE: ${INSTANCE}"
 	echo "!!!!!!!!!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
   	ls -l set-var.sh $SCRIPTS
-  	scp -p -i kubernetes.id_rsa set-var.sh $SCRIPTS ubuntu@$EXTERNAL_IP:~/
+  	scp -i kubernetes.id_rsa set-var.sh $SCRIPTS ubuntu@$EXTERNAL_IP:~/
   	ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "${CMD}"
 	if [ $? -eq 0 ]; then
 		CONNECTED=1

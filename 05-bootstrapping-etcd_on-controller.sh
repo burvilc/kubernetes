@@ -7,12 +7,12 @@
 #Download the official etcd release binaries from the coreos/etcd GitHub project:
 
 wget -q --show-progress --https-only --timestamping \
-  "https://github.com/etcd-io/etcd/releases/download/v3.3.18/etcd-v3.3.18-linux-amd64.tar.gz"
+  "https://github.com/etcd-io/etcd/releases/download/v3.4.7/etcd-v3.4.7-linux-amd64.tar.gz"
 
 #Extract and install the etcd server and the etcdctl command line utility:
 
-tar -xvf etcd-v3.3.18-linux-amd64.tar.gz
-sudo mv etcd-v3.3.18-linux-amd64/etcd* /usr/local/bin/
+tar -xvf etcd-v3.4.7-linux-amd64.tar.gz
+sudo mv etcd-v3.4.7-linux-amd64/etcd* /usr/local/bin/
 
 #Configure the etcd Server
 sudo mkdir -p /etc/etcd /var/lib/etcd
@@ -28,6 +28,7 @@ ETCD_NAME=$(curl -s http://169.254.169.254/latest/user-data/ \
 echo "${ETCD_NAME}"
 
 #Create the etcd.service systemd unit file:
+#  --initial-cluster controller-0=https://10.0.1.10:2380,controller-1=https://10.0.1.11:2380,controller-2=https://10.0.1.12:2380 \\
 
 cat <<EOF | sudo tee /etc/systemd/system/etcd.service
 [Unit]
@@ -50,7 +51,7 @@ ExecStart=/usr/local/bin/etcd \\
   --listen-client-urls https://${INTERNAL_IP}:2379,https://127.0.0.1:2379 \\
   --advertise-client-urls https://${INTERNAL_IP}:2379 \\
   --initial-cluster-token etcd-cluster-0 \\
-  --initial-cluster controller-0=https://10.0.1.10:2380,controller-1=https://10.0.1.11:2380,controller-2=https://10.0.1.12:2380 \\
+  --initial-cluster controller-0=https://10.0.1.10:2380 \\
   --initial-cluster-state new \\
   --data-dir=/var/lib/etcd
 Restart=on-failure

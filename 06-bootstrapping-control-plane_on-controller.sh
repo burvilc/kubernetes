@@ -11,10 +11,10 @@ sudo mkdir -p /etc/kubernetes/config
 #Download the official Kubernetes release binaries:
 
 wget -q --show-progress --https-only --timestamping \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.17.2/bin/linux/amd64/kube-apiserver" \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.17.2/bin/linux/amd64/kube-controller-manager" \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.17.2/bin/linux/amd64/kube-scheduler" \
-  "https://storage.googleapis.com/kubernetes-release/release/v1.17.2/bin/linux/amd64/kubectl"
+  "https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kube-apiserver" \
+  "https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kube-controller-manager" \
+  "https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kube-scheduler" \
+  "https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl"
 
 #Install the Kubernetes binaries:
 
@@ -148,9 +148,21 @@ EOF
 
 #Start the Controller Services
 sudo systemctl daemon-reload
-sudo systemctl enable kube-apiserver kube-controller-manager kube-scheduler
-sudo systemctl start kube-apiserver kube-controller-manager kube-scheduler
+SERVICES="kube-apiserver kube-controller-manager kube-scheduler"
+sudo systemctl enable $SERVICES 
+sudo systemctl start $SERVICES
 
-#Allow up to 30 seconds for the Kubernetes API Server to fully initialize.
-sleep 30
+FAILED=1
+for SERVICE in $SERVICES; do
+	while [ "${FAILED}" -eq 1 ]; do 
+		sleep 30
+		journalctl -xeu $SERVICE
+		sudo systemctl status $SERVICE
+		if [ $? -eq 0 ]; then 
+			FAILED=0
+		fi
+	done
+done
 
+#Now check status of your controller components
+kubectl get componentstatuses

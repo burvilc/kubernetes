@@ -2,21 +2,22 @@
 
 #Provisioning a Kubernetes Worker Node
 #Install the OS dependencies:
-sudo apt-get update
+sudo apt-get -y update
 sudo apt-get -y install socat conntrack ipset
 
 #The socat binary enables support for the kubectl port-forward command.
 
 #Download and Install Worker Binaries
-wget -q --show-progress --https-only --timestamping \
-  https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.17.0/crictl-v1.17.0-linux-amd64.tar.gz \
+#wget --show-progress --https-only --timestamping \
+wget \
+  https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.18.0/crictl-v1.18.0-linux-amd64.tar.gz \
   https://storage.googleapis.com/kubernetes-the-hard-way/runsc \
   https://github.com/opencontainers/runc/releases/download/v1.0.0-rc10/runc.amd64 \
   https://github.com/containernetworking/plugins/releases/download/v0.8.5/cni-plugins-linux-amd64-v0.8.5.tgz \
-  https://github.com/containerd/containerd/releases/download/v1.3.2/containerd-1.3.2.linux-amd64.tar.gz \
-  https://storage.googleapis.com/kubernetes-release/release/v1.17.2/bin/linux/amd64/kubectl \
-  https://storage.googleapis.com/kubernetes-release/release/v1.17.2/bin/linux/amd64/kube-proxy \
-  https://storage.googleapis.com/kubernetes-release/release/v1.17.2/bin/linux/amd64/kubelet
+  https://github.com/containerd/containerd/releases/download/v1.3.3/containerd-1.3.3.linux-amd64.tar.gz \
+  https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubectl \
+  https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kube-proxy \
+  https://storage.googleapis.com/kubernetes-release/release/v1.18.0/bin/linux/amd64/kubelet
 
 #Create the installation directories:
 
@@ -33,9 +34,9 @@ sudo mkdir -p \
 chmod +x kubectl kube-proxy kubelet runc.amd64 runsc
 sudo mv runc.amd64 runc
 sudo mv kubectl kube-proxy kubelet runc runsc /usr/local/bin/
-sudo tar -xvf crictl-v1.17.0-linux-amd64.tar.gz -C /usr/local/bin/
+sudo tar -xvf crictl-v1.18.0-linux-amd64.tar.gz -C /usr/local/bin/
 sudo tar -xvf cni-plugins-linux-amd64-v0.8.5.tgz -C /opt/cni/bin/
-sudo tar -xvf containerd-1.3.2.linux-amd64.tar.gz -C /
+sudo tar -xvf containerd-1.3.3.linux-amd64.tar.gz -C /
 
 #Configure CNI Networking
 #Retrieve the Pod CIDR range for the current compute instance:
@@ -124,7 +125,7 @@ echo "${WORKER_NAME}"
 sudo mv ${WORKER_NAME}-key.pem ${WORKER_NAME}.pem /var/lib/kubelet/
 sudo mv ${WORKER_NAME}.kubeconfig /var/lib/kubelet/kubeconfig
 sudo mv ca.pem /var/lib/kubernetes/
-Create the kubelet-config.yaml configuration file:
+#Create the kubelet-config.yaml configuration file:
 
 cat <<EOF | sudo tee /var/lib/kubelet/kubelet-config.yaml
 kind: KubeletConfiguration
@@ -209,3 +210,5 @@ sudo systemctl enable containerd kubelet kube-proxy
 sudo systemctl start containerd kubelet kube-proxy
 #Remember to run the above commands on each worker node: worker-0, worker-1, and worker-2.
 
+echo "Waiting for services to initialize..."
+sleep 60

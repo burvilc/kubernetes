@@ -1,8 +1,9 @@
 #!/bin/bash
 
-for instance in worker-0 worker-1 worker-2; do
+#for instance in worker-0 worker-1 worker-2; do
+for instance in worker-0 worker-1 ; do
   instance_id_ip="$(aws ec2 describe-instances \
-    --filters "Name=tag:Name,Values=${instance}" \
+    --filters "Name=tag:Name,Values=${instance}"  "Name=instance-state-name,Values=running" \
     --output text --query 'Reservations[].Instances[].[InstanceId,PrivateIpAddress]' \
     | grep -v None )"
   instance_id="$(echo "${instance_id_ip}" | cut -f1)"

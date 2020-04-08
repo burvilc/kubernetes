@@ -127,6 +127,20 @@ for i in 0 1 ; do
   echo "worker-${i} created"
 done
 
+for INSTANCE in worker-0 worker-1 controller-0 ; do
+  EXTERNAL_IP=""
+  while [ -z "${EXTERNAL_IP}" ]; do
+    EXTERNAL_IP=$(aws ec2 describe-instances \
+        --filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=running" \
+        --output text --query 'Reservations[].Instances[].PublicIpAddress')
+	if [ -z "${EXTERNAL_IP}" ]; then
+		sleep 30
+	else
+		break
+	fi
+  done
+  echo "Instance ${INSTANCE} is running at external IP ${EXTERNAL_IP}"
+done
 
 rm -f set-var.sh
 for v in VPC_ID SUBNET_ID INTERNET_GATEWAY_ID ROUTE_TABLE_ID SECURITY_GROUP_ID LOAD_BALANCER_ARN TARGET_GROUP_ARN KUBERNETES_PUBLIC_ADDRESS IMAGE_ID 
