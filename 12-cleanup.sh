@@ -7,7 +7,7 @@ RESULT=1
 aws ec2 terminate-instances \
   --instance-ids \
     $(aws ec2 describe-instances \
-      --filter "Name=tag:Name,Values=controller-0,controller-1,controller-2,worker-0,worker-1,worker-2" \
+      --filter "Name=tag:Name,Values=controller-*,worker-*" \
       --output text --query 'Reservations[].Instances[].InstanceId')
 aws ec2 delete-key-pair --key-name kubernetes
 
@@ -16,7 +16,7 @@ aws ec2 delete-key-pair --key-name kubernetes
 
 INSTANCE_IDS=""
 INSTANCE_IDS= $(aws ec2 describe-instances \
-      --filters "Name=tag:Name,Values=controller-0,controller-1,controller-2,worker-0,worker-1,worker-2" \
+      --filters "Name=tag:Name,Values=controller-*,worker-*" \
 		"Name=instance-state-name,Values=running" \
       --output text --query 'Reservations[].Instances[].InstanceId')
 

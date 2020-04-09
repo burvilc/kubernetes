@@ -1,9 +1,9 @@
-export VPC_ID=vpc-04546e1dda82258b8
-export SUBNET_ID=subnet-093a7ed534f9ecec3
-export INTERNET_GATEWAY_ID=igw-089834c8682142727
-export ROUTE_TABLE_ID=rtb-060c5a5f63fdfb264
-export SECURITY_GROUP_ID=sg-05cdacc770fbbc55e
-export LOAD_BALANCER_ARN=arn:aws:elasticloadbalancing:us-west-2:201938144338:loadbalancer/net/kubernetes/fcebdaca19191dbf
-export TARGET_GROUP_ARN=arn:aws:elasticloadbalancing:us-west-2:201938144338:targetgroup/kubernetes/46bec3ade75b71a1
-export KUBERNETES_PUBLIC_ADDRESS=kubernetes-fcebdaca19191dbf.elb.us-west-2.amazonaws.com
+export VPC_ID=vpc-0e3f5b286a2942369
+export SUBNET_ID=subnet-08c2d97919fa35123
+export INTERNET_GATEWAY_ID=igw-0dfffd894d766b753
+export ROUTE_TABLE_ID=rtb-033864d9bb58825fa
+export SECURITY_GROUP_ID=sg-07e2292612a0851d3
+export LOAD_BALANCER_ARN=arn:aws:elasticloadbalancing:us-west-2:201938144338:loadbalancer/net/kubernetes/96ec007e1ec8bbf0
+export TARGET_GROUP_ARN=arn:aws:elasticloadbalancing:us-west-2:201938144338:targetgroup/kubernetes/2103d63ff2b405bb
+export KUBERNETES_PUBLIC_ADDRESS=kubernetes-96ec007e1ec8bbf0.elb.us-west-2.amazonaws.com
 export IMAGE_ID=ami-0e23ea41be77feacd

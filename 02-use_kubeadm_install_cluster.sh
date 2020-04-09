@@ -3,7 +3,7 @@
 INIT_DONE=""
 
 #for instance in controller-0 controller-1 controller-2 worker-0 worker-1 worker-2; do
-for INSTANCE in worker-0 worker-1 controller-0 ; do
+for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
   CONNECTED=""
   EXTERNAL_IP=""
   while [ -z "${EXTERNAL_IP}" ]; do
@@ -43,7 +43,7 @@ scp -i kubernetes.id_rsa -r ubuntu@${MAIN_CONTROLLER_IP}:.kube .
 
 #for INSTANCE in worker-0 worker-1 controller-0 controller-1; do
 # controller comes first, so can get join command
-for INSTANCE in worker-0 worker-1 ; do
+for INSTANCE in $WORKER_NAMES ; do
 	EXTERNAL_IP=$(aws ec2 describe-instances \
     	--filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=running" \
     	--output text --query 'Reservations[].Instances[].PublicIpAddress')

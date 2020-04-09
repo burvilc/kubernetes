@@ -88,7 +88,7 @@ chmod 600 kubernetes.id_rsa
 #Using t3.micro instances
 
 #for i in 0 1 2; do
-for i in 0 ; do
+for i in $(seq 0 $MAX_CONTROLLER_I) ; do
   instance_id=$(aws ec2 run-instances \
     --associate-public-ip-address \
     --image-id ${IMAGE_ID} \
@@ -109,7 +109,7 @@ done
 #########################
 #Kubernetes Workers
 #for i in 0 1 2; do
-for i in 0 1 ; do
+for i in $(seq 0 $MAX_WORKER_I); do
   instance_id=$(aws ec2 run-instances \
     --associate-public-ip-address \
     --image-id ${IMAGE_ID} \
@@ -127,7 +127,7 @@ for i in 0 1 ; do
   echo "worker-${i} created"
 done
 
-for INSTANCE in worker-0 worker-1 controller-0 ; do
+for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
   EXTERNAL_IP=""
   while [ -z "${EXTERNAL_IP}" ]; do
     EXTERNAL_IP=$(aws ec2 describe-instances \
@@ -143,6 +143,7 @@ for INSTANCE in worker-0 worker-1 controller-0 ; do
 done
 
 rm -f set-var.sh
+cat 00-config.sh > set-var.sh
 for v in VPC_ID SUBNET_ID INTERNET_GATEWAY_ID ROUTE_TABLE_ID SECURITY_GROUP_ID LOAD_BALANCER_ARN TARGET_GROUP_ARN KUBERNETES_PUBLIC_ADDRESS IMAGE_ID 
 do
 	echo "$v"
