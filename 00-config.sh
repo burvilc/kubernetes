@@ -8,8 +8,8 @@ export WHICH_TESTS="SMOKE"
 echo \$WHICH_TESTS $WHICH_TESTS
 
 # Cluster install method: kubeadm or Kubernetes the Hard way.  Hard way may have issues with bootstrapping etcd and other subsequent issues.
-# KUBEADM or HARD_WAY
-export CLUSTER_INSTALL_METHOD="KUBEADM"
+# NONE or KUBEADM or HARD_WAY.  Use NONE if only want to deploy instances
+export CLUSTER_INSTALL_METHOD="NONE"
 echo \$CLUSTER_INSTALL_METHOD $CLUSTER_INSTALL_METHOD
 
 #-> move cleanup flag here.  If set to 1, will delete AWS resources rght after testing is done.
@@ -17,8 +17,8 @@ export CLEANUP=1
 echo \$CLEANUP $CLEANUP
 
 #-> number of controllers, workers
-export NUM_CONTROLLERS=3
-export NUM_WORKERS=2
+export NUM_CONTROLLERS=1
+export NUM_WORKERS=1
 echo \$NUM_CONTROLLERS $NUM_CONTROLLERS
 echo \$NUM_WORKERS $NUM_WORKERS
 
@@ -46,7 +46,7 @@ echo \$E2E_TEST_TOOL $E2E_TEST_TOOL
 
 #-> use_case: what configuration (adjust EBS volumes accordingly).  
 #	PERF - performance; requires io1 EBS volume
-export USE_CASE="PERF"
+export USE_CASE="STD"
 echo \$USE_CASE $USE_CASE
 
 #-> OS to use

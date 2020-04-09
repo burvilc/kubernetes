@@ -68,8 +68,10 @@ sudo docker ps -a
 
 # Initialize control plane - following steps only on master
 sudo kubeadm config images pull
-sudo kubeadm init 
-#sudo kubeadm init --control-plane-endpoint $KUBERNETES_PUBLIC_ADDRESS
+# No HA, i.e. 1 controller
+#sudo kubeadm init
+# HA, with 2-3 controllers 
+sudo kubeadm init --control-plane-endpoint $KUBERNETES_PUBLIC_ADDRESS
 sleep 300
 sudo kubeadm config print init-defaults
 

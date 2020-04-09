@@ -20,7 +20,7 @@ INSTANCE_IDS= $(aws ec2 describe-instances \
 		"Name=instance-state-name,Values=running" \
       --output text --query 'Reservations[].Instances[].InstanceId')
 
-while [ -n "${RESULT}" -a  "${RESULT}" -ne 0 ]; do
+while  [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] && [ "${RESULT}" -ne 254 ] ) ; do
 	aws elbv2 delete-load-balancer --load-balancer-arn "${LOAD_BALANCER_ARN}"
 	RESULT=$?
 	sleep 20
@@ -35,7 +35,7 @@ sleep 60
 
 aws elbv2 delete-target-group --target-group-arn "${TARGET_GROUP_ARN}"
 RESULT=1
-while [ -n "${RESULT}" -a "${RESULT}" -ne 0 ]; do
+while  [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] && [ "${RESULT}" -ne 254 ] ) ; do
 	aws ec2 delete-security-group --group-id "${SECURITY_GROUP_ID}"
 	RESULT=$?
 	sleep 20
