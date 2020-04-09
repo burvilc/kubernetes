@@ -6,15 +6,15 @@ echo "StrictHostKeyChecking no" > ~/.ssh/config
 . 00-config.sh
 
 #Install with Kubeadm
-if [ $CLUSTER_INSTALL_METHOD == "HARD_WAT" ]; then 
+if [ "$CLUSTER_INSTALL_METHOD" = "HARD_WAY" ]; then 
 	STEP_SCRIPTS="02-certs.sh 03-generate-config-files.sh 04-encryption-keys.sh 05-bootstrapping-etcd.sh 06-bootstrapping-control-plane.sh 07-bootstrapping-worker-nodes.sh 08-kubectl-remote-access.sh 09-pod-network-routes.sh 10-dns-addon.sh "
-elif [ $CLUSTER_INSTALL_METHOD == "KUBEADM" ]; then 
+elif [ "$CLUSTER_INSTALL_METHOD" = "KUBEADM" ]; then 
 	STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh "
 fi
 
-if [ $CLUSTER_INSTALL_METHOD == "SMOKE" ]; then 
+if [ "$WHICH_TESTS" = "SMOKE" ]; then 
 	STEP_SCRIPTS+=" 11-smoke-tests.sh "
-elif [ $CLUSTER_INSTALL_METHOD == "SMOKE_AND_E2E" ]; then 
+elif [ "$WHICH_TESTS" = "SMOKE_AND_E2E" ]; then 
 	STEP_SCRIPTS+=" 11-smoke-tests.sh 11-e2e-tests.sh"
 fi
 
@@ -22,16 +22,6 @@ fi
 if [ -n "${CLEANUP}" -a "${CLEANUP}" -eq 1 ]; then
 	STEP_SCRIPTS+=" 12-cleanup.sh"
 fi
-
-# Following steps run for Kubernetes the Hard Way; seems to have problems from time to time bootstrapping etcd...
-#"02-certs.sh 03-generate-config-files.sh 04-encryption-keys.sh 05-bootstrapping-etcd.sh"
-# The rest of the steps:
-# 06-bootstrapping-control-plane.sh 07-bootstrapping-worker-nodes.sh 08-kubectl-remote-access.sh 09-pod-network-routes.sh 10-dns-addon.sh 11-smoke-tests.sh"
-# Cleanup:
-#12-cleanup.sh"
-
-# All step scripts, except for first:
-#STEP_SCRIPTS="02-certs.sh 03-generate-config-files.sh 04-encryption-keys.sh 05-bootstrapping-etcd.sh 06-bootstrapping-control-plane.sh 07-bootstrapping-worker-nodes.sh 07-bootstrapping-worker-nodes_on-worker.sh 08-kubectl-remote-access.sh 09-pod-network-routes.sh 10-dns-addon.sh 11-smoke-tests.sh 12-cleanup.sh"
 
 echo "Starting deployment, configuration and validation of Kubernetes cluster."
 echo "Deploying instances..."
