@@ -176,7 +176,8 @@ WantedBy=multi-user.target
 EOF
 
 #Configure the Kubernetes Proxy
-#sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
+sudo mv kube-proxy.kubeconfig /var/lib/kube-proxy/kubeconfig
+
 #Create the kube-proxy-config.yaml configuration file:
 
 cat <<EOF | sudo tee /var/lib/kube-proxy/kube-proxy-config.yaml
@@ -210,5 +211,3 @@ sudo systemctl enable containerd kubelet kube-proxy
 sudo systemctl start containerd kubelet kube-proxy
 #Remember to run the above commands on each worker node: worker-0, worker-1, and worker-2.
 
-echo "Waiting for services to initialize..."
-sleep 60

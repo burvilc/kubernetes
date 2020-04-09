@@ -14,9 +14,17 @@ done
 
 #The compute instances created in this tutorial will not have permission to complete this section. Run the following commands from the same machine used to create the compute instances.
 
+echo "Waiting for nodes to initialize..."
+sleep 60
+
 #List the registered Kubernetes nodes:
 external_ip=$(aws ec2 describe-instances \
     --filters "Name=tag:Name,Values=controller-0"  "Name=instance-state-name,Values=running" \
     --output text --query 'Reservations[].Instances[].PublicIpAddress')
 
-ssh -i kubernetes.id_rsa ubuntu@${external_ip} "kubectl get nodes --kubeconfig admin.kubeconfig"
+NODE_COUNT=0
+while [ $NODE_COUNT -lt 3 ]; do 
+	NODE_OUTPUT=`ssh -i kubernetes.id_rsa ubuntu@${external_ip} "kubectl get nodes --kubeconfig admin.kubeconfig"`
+	NODE_COUNT=`echo $NODE_OUTPUT | grep -v NAME | wc -l`
+	sleep 30
+done

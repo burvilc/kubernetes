@@ -12,6 +12,10 @@ echo \$WHICH_TESTS $WHICH_TESTS
 export CLUSTER_INSTALL_METHOD="KUBEADM"
 echo \$CLUSTER_INSTALL_METHOD $CLUSTER_INSTALL_METHOD
 
+#-> move cleanup flag here.  If set to 1, will delete AWS resources rght after testing is done.
+export CLEANUP=1
+echo \$CLEANUP $CLEANUP
+
 #-> e2e test: kubetest or sonobuoy.  Currently, only sonobuoy is working. kubetest seems to require a google cloud account, which requires giving credit card info to Google and other setup.  
 export E2E_TEST_TOOL="SONOBUOY"
 echo \$E2E_TEST_TOOL $E2E_TEST_TOOL
@@ -20,10 +24,6 @@ echo \$E2E_TEST_TOOL $E2E_TEST_TOOL
 #	PERF - performance; requires io1 EBS volume
 export USE_CASE="PERF"
 echo \$USE_CASE $USE_CASE
-
-#-> move cleanup flag here.  If set to 1, will delete AWS resources rght after testing is done.
-export CLEANUP=1
-echo \$CLEANUP $CLEANUP
 
 #-> number of controllers, workers
 export NUM_CONTROLLERS=1

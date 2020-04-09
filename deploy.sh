@@ -6,11 +6,19 @@ echo "StrictHostKeyChecking no" > ~/.ssh/config
 . 00-config.sh
 
 #Install with Kubeadm
-#STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 11-smoke-tests.sh 11-e2e-tests.sh"
-#STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 11-smoke-tests.sh 11-e2e-tests.sh"
-STEP_SCRIPTS="02-certs.sh 03-generate-config-files.sh 04-encryption-keys.sh 05-bootstrapping-etcd.sh 06-bootstrapping-control-plane.sh 07-bootstrapping-worker-nodes.sh 08-kubectl-remote-access.sh 09-pod-network-routes.sh 10-dns-addon.sh 11-smoke-tests.sh"
+if [ $CLUSTER_INSTALL_METHOD == "HARD_WAT" ]; then 
+	STEP_SCRIPTS="02-certs.sh 03-generate-config-files.sh 04-encryption-keys.sh 05-bootstrapping-etcd.sh 06-bootstrapping-control-plane.sh 07-bootstrapping-worker-nodes.sh 08-kubectl-remote-access.sh 09-pod-network-routes.sh 10-dns-addon.sh "
+elif [ $CLUSTER_INSTALL_METHOD == "KUBEADM" ]; then 
+	STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh "
+fi
+
+if [ $CLUSTER_INSTALL_METHOD == "SMOKE" ]; then 
+	STEP_SCRIPTS+=" 11-smoke-tests.sh "
+elif [ $CLUSTER_INSTALL_METHOD == "SMOKE_AND_E2E" ]; then 
+	STEP_SCRIPTS+=" 11-smoke-tests.sh 11-e2e-tests.sh"
+fi
+
 #STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 12-cleanup.sh"
-#STEP_SCRIPTS="02-certs.sh 02-use_kubeadm_install_cluster.sh"
 if [ -n "${CLEANUP}" -a "${CLEANUP}" -eq 1 ]; then
 	STEP_SCRIPTS+=" 12-cleanup.sh"
 fi
