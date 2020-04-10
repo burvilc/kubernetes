@@ -2,8 +2,20 @@
 
 # Initialize control plane - following steps only on master
 sudo kubeadm config images pull
-sudo kubeadm init 
-#sudo kubeadm init --control-plane-endpoint $KUBERNETES_PUBLIC_ADDRESS
+#sudo kubeadm init 
+if [ ${NUM_CONTROLLERS} -le 1 ]; then
+	CMD="sudo kubeadm init"
+else
+	CMD="sudo kubeadm init --control-plane-endpoint $KUBERNETES_PUBLIC_ADDRESS"
+fi
+$CMD
+if [ $? -ne 0 ]; then
+	echo "Troubleshooting information:"
+	systemctl status kubelet
+	journalctl -xeu kubelet
+	$CMD --v=10
+fi
+
 sleep 300
 sudo kubeadm config print init-defaults
 sudo which kubeadm
@@ -14,8 +26,14 @@ ls -l /etc/kubernetes/admin.conf
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
 sudo chown $(id -u):$(id -g) $HOME/.kube/config
 
-#For each node:!!!!!!!!!!!!!
-kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+# Keep on trying to apply weave until successful
+RESULT=1
+while [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] ); do
+	kubectl apply -f "https://cloud.weave.works/k8s/net?k8s-version=$(kubectl version | base64 | tr -d '\n')"
+	RESULT=$?
+	sleep 5
+done
+	
 #TOKEN=`kubeadm token create`
 #HASH=`openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | \
 #   openssl dgst -sha256 -hex | sed 's/^.* //'`

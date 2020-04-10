@@ -1,57 +1,61 @@
 #!/bin/bash
 
+rm -f set-var.sh
+
 #config file - 
 #-> what tests to run
 #	SMOKE or SMOKE_AND_E2E
 #  If E2E tests run, need io1 EBS volumes, i.e. PERF 
-export WHICH_TESTS="SMOKE"
-echo \$WHICH_TESTS $WHICH_TESTS
+#  E2E tests take 1-1.5 hours, and could mean associated additional AWS costs.
+WHICH_TESTS="SMOKE"
+echo "export WHICH_TESTS=$WHICH_TESTS" >> set-var.sh
 
-# Cluster install method: kubeadm or Kubernetes the Hard way.  Hard way may have issues with bootstrapping etcd and other subsequent issues.
+# Cluster install method: kubeadm or Kubernetes the Hard way.  Hard way may have issues with bootstrapping etcd and other subsequent issues.  Hard way is also not officially supported.
 # NONE or KUBEADM or HARD_WAY.  Use NONE if only want to deploy instances
-export CLUSTER_INSTALL_METHOD="NONE"
-echo \$CLUSTER_INSTALL_METHOD $CLUSTER_INSTALL_METHOD
+CLUSTER_INSTALL_METHOD="KUBEADM"
+echo "export CLUSTER_INSTALL_METHOD=$CLUSTER_INSTALL_METHOD" >> set-var.sh
 
-#-> move cleanup flag here.  If set to 1, will delete AWS resources rght after testing is done.
-export CLEANUP=1
-echo \$CLEANUP $CLEANUP
+#-> move cleanup flag here.  If set to 1, will delete AWS resources rght after testing is done or after failure of any component in this script.
+CLEANUP=1
+echo "export CLEANUP=$CLEANUP" >> set-var.sh
 
-#-> number of controllers, workers
-export NUM_CONTROLLERS=1
-export NUM_WORKERS=1
-echo \$NUM_CONTROLLERS $NUM_CONTROLLERS
-echo \$NUM_WORKERS $NUM_WORKERS
+#-> Number of controllers, workers.  NOTE: NUM_CONTROLLERS greater than 1 will trigger an HA setup for controllers, i.e. where additional controller nodes are added as control plane and not worker nodes.
+NUM_CONTROLLERS=3
+NUM_WORKERS=3
+echo "export NUM_CONTROLLERS=$NUM_CONTROLLERS" >> set-var.sh
+echo "export NUM_WORKERS=$NUM_WORKERS" >> set-var.sh
 
+# Derive maximum controller index. 
 CONTROLLER_NAMES+=""
 MAX_CONTROLLER_I="$(($NUM_CONTROLLERS - 1))"
 for i in $(seq 0 $MAX_CONTROLLER_I); do
 	CONTROLLER_NAMES+=" controller-${i}"
 done
-export MAX_WORKER_I=$MAX_CONTROLLER_I
-export CONTROLLER_NAMES=$CONTROLLER_NAMES
-echo \$CONTROLLER_NAMES $CONTROLLER_NAMES
+echo "export MAX_CONTROLLER_I=$MAX_CONTROLLER_I" >> set-var.sh
+echo "export CONTROLLER_NAMES=\"$CONTROLLER_NAMES\"" >> set-var.sh
 
+# Derive maximum worker index
 WORKER_NAMES+=""
 MAX_WORKER_I="$(($NUM_WORKERS - 1))"
 for i in $(seq 0 $MAX_WORKER_I); do
 	WORKER_NAMES+=" worker-${i}"
 done
-export MAX_WORKER_I=$MAX_WORKER_I
-export WORKER_NAMES=$WORKER_NAMES
-echo \$WORKER_NAMES $WORKER_NAMES
-
-#-> e2e test: kubetest or sonobuoy.  Currently, only sonobuoy is working. kubetest seems to require a google cloud account, which requires giving credit card info to Google and other setup.  
-export E2E_TEST_TOOL="SONOBUOY"
-echo \$E2E_TEST_TOOL $E2E_TEST_TOOL
+echo "export MAX_WORKER_I=$MAX_WORKER_I" >> set-var.sh
+echo "export WORKER_NAMES=\"$WORKER_NAMES\"" >> set-var.sh
 
 #-> use_case: what configuration (adjust EBS volumes accordingly).  
 #	PERF - performance; requires io1 EBS volume
-export USE_CASE="STD"
-echo \$USE_CASE $USE_CASE
+USE_CASE="STD"
+echo "export USE_CASE=$USE_CASE" >> set-var.sh
+
+#############################################################
+# Following variables need to be accounted for in script; below show the current configuration
+#-> e2e test: kubetest or sonobuoy.  Currently, only sonobuoy is working. kubetest seems to require a google cloud account, which requires giving credit card info to Google and other setup.  
+E2E_TEST_TOOL="SONOBUOY"
+echo "export E2E_TEST_TOOL=$E2E_TEST_TOOL" >> set-var.sh
 
 #-> OS to use
-export OS="Ubuntu"
-echo \$OS $OS
+OS="Ubuntu"
+echo "export OS=$OS" >> set-var.sh
 
-#-> at beginning, show config settings
 

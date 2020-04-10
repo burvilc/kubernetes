@@ -27,30 +27,66 @@ while  [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] && [ "${RESULT}" -ne 254 ] 
 done
 
 while [ -n "${INSTANCE_IDS}" ]; do
-	sleep 30
+	sleep 10
 done
 
 # Give enough time after load balancer deletion so it removes IP, etc. as well as EC2 instances to be fully terminated.
-sleep 60
+sleep 30
 
-aws elbv2 delete-target-group --target-group-arn "${TARGET_GROUP_ARN}"
 RESULT=1
 while  [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] && [ "${RESULT}" -ne 254 ] ) ; do
+	sleep 20
+	aws elbv2 delete-target-group --target-group-arn "${TARGET_GROUP_ARN}"
+	RESULT=$?
+done
+sleep 10
+
+RESULT=1
+while  [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] && [ "${RESULT}" -ne 254 ] ) ; do
+	sleep 20
 	aws ec2 delete-security-group --group-id "${SECURITY_GROUP_ID}"
 	RESULT=$?
-	sleep 20
 done
-sleep 30
+sleep 10
 
 ROUTE_TABLE_ASSOCIATION_ID="$(aws ec2 describe-route-tables \
   --route-table-ids "${ROUTE_TABLE_ID}" \
   --output text --query 'RouteTables[].Associations[].RouteTableAssociationId')"
-aws ec2 disassociate-route-table --association-id "${ROUTE_TABLE_ASSOCIATION_ID}"
+RESULT=1
+while  [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] && [ "${RESULT}" -ne 254 ] ) ; do
+	sleep 5 
+	aws ec2 disassociate-route-table --association-id "${ROUTE_TABLE_ASSOCIATION_ID}"
+	RESULT=$?
+done
 
-aws ec2 delete-route-table --route-table-id "${ROUTE_TABLE_ID}"
-aws ec2 detach-internet-gateway \
-  --internet-gateway-id "${INTERNET_GATEWAY_ID}" \
-  --vpc-id "${VPC_ID}"
-aws ec2 delete-internet-gateway --internet-gateway-id "${INTERNET_GATEWAY_ID}"
-aws ec2 delete-subnet --subnet-id "${SUBNET_ID}"
-aws ec2 delete-vpc --vpc-id "${VPC_ID}"
+RESULT=1
+while  [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] && [ "${RESULT}" -ne 254 ] ) ; do
+	sleep 5 
+	aws ec2 delete-route-table --route-table-id "${ROUTE_TABLE_ID}"
+	RESULT=$?
+done
+
+RESULT=1
+while  [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] && [ "${RESULT}" -ne 254 ] ) ; do
+	sleep 5 
+	aws ec2 detach-internet-gateway \
+  		--internet-gateway-id "${INTERNET_GATEWAY_ID}" \
+  		--vpc-id "${VPC_ID}"
+	aws ec2 delete-internet-gateway --internet-gateway-id "${INTERNET_GATEWAY_ID}"
+	RESULT=$?
+done
+
+RESULT=1
+while  [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] && [ "${RESULT}" -ne 254 ] ) ; do
+	sleep 5 
+	aws ec2 delete-subnet --subnet-id "${SUBNET_ID}"
+	RESULT=$?
+done
+
+RESULT=1
+while  [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] && [ "${RESULT}" -ne 254 ] ) ; do
+	sleep 5 
+	aws ec2 delete-vpc --vpc-id "${VPC_ID}"
+	RESULT=$?
+done
+

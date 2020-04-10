@@ -1,7 +1,6 @@
 #!/bin/bash -xv
 
 # Based on https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/ and 
-HOSTNAME=`hostname`
 
 #!!!! following steps should be done on both controllers, workers
 ############################################
@@ -16,8 +15,6 @@ net.bridge.bridge-nf-call-iptables = 1
 EOF
 sudo sysctl --system
 
-#turn off swap
-sudo swappoff -a
 ############################################
 
 
@@ -25,13 +22,14 @@ sudo swappoff -a
 # Make sure Docker CRI, other packages installed - do this on all nodes
 # Ubuntu
 # apt-get install docker
-sudo mkdir -p /var/lib/apt/lists/
 export DEBIAN_FRONTEND=noninteractive
 echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections
 #Following two chmod not for production...
 sudo chmod 777 /var/cache/debconf/
 sudo chmod 777 /var/cache/debconf/passwords.dat
+echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 sudo apt-get update && sudo apt-get install -y -o Dpkg::Options::="--force-confnew" apt-transport-https curl ca-certificates software-properties-common 
+
 #Ensure iptables tooling does not use the nftables backend
 #Ubuntu 
 # ensure legacy binaries are installed
@@ -53,7 +51,6 @@ sudo apt-get install -y -o Dpkg::Options::="--force-confnew"  kubelet kubeadm ku
 sudo apt-mark hold kubelet kubeadm kubectl
 
 kubeadm version -o short
-which kubeadm 
 
 dpkg -l| grep -i docker
 which docker

@@ -3,7 +3,8 @@
 date
 echo "StrictHostKeyChecking no" > ~/.ssh/config 
 
-. 00-config.sh
+bash 00-config.sh
+. set-var.sh
 
 #Install with Kubeadm
 if [ "$CLUSTER_INSTALL_METHOD" = "HARD_WAY" ]; then 
@@ -22,23 +23,32 @@ if [ ! -z $STEP_SCRIPTS ]; then
 	fi
 fi
 
-#STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh 12-cleanup.sh"
 if [ -n "${CLEANUP}" -a "${CLEANUP}" -eq 1 ]; then
 	STEP_SCRIPTS+=" 12-cleanup.sh"
 fi
+
+echo $STEP_SCRIPTS
 
 echo "Starting deployment, configuration and validation of Kubernetes cluster."
 echo "Deploying instances..."
 bash -xv 01-provision-instances.sh > 01-provision-instances.sh.log 2>&1
 . set-var.sh
+
 for SCRIPT in $STEP_SCRIPTS
 do
 	echo "RUNNING $SCRIPT"
 	bash -xv $SCRIPT > "${SCRIPT}.log" 2>&1
+	RETVAL=$?
 	ls -lh "${SCRIPT}.log"
-	if [ $? -ne 0 ]; then
-		echo "ERROR: $SCRIPT Failed. See ${SCRIPT} for details.  Cleaning up resources and exiting now."
-		bash -xv 12-cleanup.sh > 12-cleanup.sh.log 2>&1
+	if [ $RETVAL -ne 0 ]; then
+		echo "ERROR: $SCRIPT Failed. See ${SCRIPT} for details.  "
+		if [ -n "${CLEANUP}" -a "${CLEANUP}" -eq 1 ]; then
+			echo "Cleaning up resources and exiting now."
+			bash -xv 12-cleanup.sh > 12-cleanup.sh.log 2>&1
+		else
+			echo "Exiting now. Resources will stay up for troubleshooting."
+			break
+		fi
 		break
 	fi
 done

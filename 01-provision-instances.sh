@@ -2,12 +2,11 @@
 
 # Use io1 if doing E2E tests or if performance config chosen
 if [ \( "${USE_CASE}" = "PERF" \) -o  \( "${WHICH_TESTS}" = "SMOKE_AND_E2E" \) ]; then
-#if [ "${USE_CASE}" = "PERF" ] ; then
-#if [ "${WHICH_TESTS}" = "SMOKE_AND_E2E" ]; then
-    VOLCONFIG="\"Ebs\": {\"VolumeSize\": 8, \"VolumeType\": \"io1\", \"Iops\" : 600 }, "
+	MAPPING='{"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 8, "VolumeType": "io1", "Iops" : 600 },  "NoDevice": "" }'
 else
-	VOLCONFIG=""
+	MAPPING='{"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 8 },  "NoDevice": "" }'
 fi
+echo $MAPPING
 
 VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --output text --query 'Vpc.VpcId')
 aws ec2 create-tags --resources ${VPC_ID} --tags Key=Name,Value=kubernetes-the-hard-way
@@ -108,7 +107,7 @@ for i in $(seq 0 $MAX_CONTROLLER_I) ; do
     --private-ip-address 10.0.1.1${i} \
     --user-data "name=controller-${i}" \
     --subnet-id ${SUBNET_ID} \
-    --block-device-mappings="{\"DeviceName\": \"/dev/sda1\", "${VOLCONFIG}" \"NoDevice\": \"\" }" \
+    --block-device-mappings="${MAPPING}" \
     --output text --query 'Instances[].InstanceId')
   aws ec2 modify-instance-attribute --instance-id ${instance_id} --no-source-dest-check
   aws ec2 create-tags --resources ${instance_id} --tags "Key=Name,Value=controller-${i}"
@@ -129,15 +128,13 @@ for i in $(seq 0 $MAX_WORKER_I); do
     --private-ip-address 10.0.1.2${i} \
     --user-data "name=worker-${i}|pod-cidr=10.200.${i}.0/24" \
     --subnet-id ${SUBNET_ID} \
-    --block-device-mappings="{\"DeviceName\": \"/dev/sda1\", "${VOLCONFIG}" \"NoDevice\": \"\" }" \
+    --block-device-mappings="${MAPPING}" \
     --output text --query 'Instances[].InstanceId')
   aws ec2 modify-instance-attribute --instance-id ${instance_id} --no-source-dest-check
   aws ec2 create-tags --resources ${instance_id} --tags "Key=Name,Value=worker-${i}"
   echo "worker-${i} created"
 done
 
-rm -f set-var.sh
-cat 00-config.sh > set-var.sh
 for v in VPC_ID SUBNET_ID INTERNET_GATEWAY_ID ROUTE_TABLE_ID SECURITY_GROUP_ID LOAD_BALANCER_ARN TARGET_GROUP_ARN KUBERNETES_PUBLIC_ADDRESS IMAGE_ID 
 do
 	echo "$v"
