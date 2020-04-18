@@ -29,7 +29,7 @@ for INSTANCE in $CONTROLLER_NAMES $WORKER_NAMES; do
   	ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "${CMD}"  # Copy and remotely execute commands
 	RETVAL=$?
 	if [[ $INSTANCE =~ controller-0 ]]; then
-		MAIN_CONTROLLER_IP=$EXTERNAL_IP
+		MAIN_CONTROLLER_EXTERNAL_IP=$EXTERNAL_IP
 	fi	
 	if [ $RETVAL -eq 0 ]; then
 		CONNECTED=1
@@ -39,7 +39,7 @@ for INSTANCE in $CONTROLLER_NAMES $WORKER_NAMES; do
 done
 
 # Copy files, so can run kubectl on main controller node
-scp -i kubernetes.id_rsa -r ubuntu@${MAIN_CONTROLLER_IP}:.kube .
+scp -i kubernetes.id_rsa -r ubuntu@${MAIN_CONTROLLER_EXTERNAL_IP}:.kube .
 
 
 # Join each node to cluster
@@ -61,5 +61,5 @@ for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
   	ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "source set-var.sh; ${JOIN_CMD}"
 done
 sleep 60
-ssh -i kubernetes.id_rsa ubuntu@$MAIN_CONTROLLER_IP "source set-var.sh; kubectl get nodes; kubectl get pods -n kube-system"
+ssh -i kubernetes.id_rsa ubuntu@$MAIN_CONTROLLER_EXTERNAL_IP "source set-var.sh; kubectl get nodes; kubectl get pods -n kube-system"
 

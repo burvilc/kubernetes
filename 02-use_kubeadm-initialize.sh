@@ -2,21 +2,22 @@
 
 # Initialize control plane - following steps only on master
 sudo kubeadm config images pull
-#sudo kubeadm init 
 if [ ${NUM_CONTROLLERS} -le 1 ]; then
 	CMD="sudo kubeadm init"
 else
-	CMD="sudo kubeadm init --control-plane-endpoint $KUBERNETES_PUBLIC_ADDRESS"
+	#CMD="sudo kubeadm init --control-plane-endpoint $MAIN_CONTROLLER_INTERNAL_IP --apiserver-advertise-address  $MAIN_CONTROLLER_INTERNAL_IP"
+	CMD="sudo kubeadm init --control-plane-endpoint $MAIN_CONTROLLER_INTERNAL_IP" 
 fi
 $CMD
-if [ $? -ne 0 ]; then
+RETVAL=$?
+sleep 300
+if [ $RETVAL -ne 0 ]; then
 	echo "Troubleshooting information:"
 	systemctl status kubelet
 	journalctl -xeu kubelet
-	$CMD --v=10
+	#$CMD --v=10
 fi
 
-sleep 300
 sudo kubeadm config print init-defaults
 sudo which kubeadm
 which kubeadm
@@ -34,9 +35,6 @@ while [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] ); do
 	sleep 5
 done
 	
-#TOKEN=`kubeadm token create`
-#HASH=`openssl x509 -pubkey -in /etc/kubernetes/pki/ca.crt | openssl rsa -pubin -outform der 2>/dev/null | \
-#   openssl dgst -sha256 -hex | sed 's/^.* //'`
 #kubeadm join --token $TOKEN <control-plane-host>:<control-plane-port> --discovery-token-ca-cert-hash sha256:${HASH}
 # For worker nodes - run this from worker node:
 #echo "kubeadm join --discovery-token $TOKEN --discovery-token-ca-cert-hash $HASH 1.2.3.4:6443" 

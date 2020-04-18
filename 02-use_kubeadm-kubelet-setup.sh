@@ -6,7 +6,7 @@ HOSTNAME=`hostname`
 #!!!! following steps should be done on both controllers, workers
 ############################################
 # Check that MAC addresses unique
-ip link
+sudo ip link
 
 ############################################
 # Let iptables see bridged traffic
@@ -17,7 +17,12 @@ EOF
 sudo sysctl --system
 
 #turn off swap
-sudo swappoff -a
+sudo swapoff -a
+
+#netfilter off
+sudo modprobe br_netfilter
+sudo lsmod | grep br_netfilter
+
 ############################################
 
 
@@ -50,6 +55,7 @@ deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 sudo apt-get update
 sudo apt-get install -y -o Dpkg::Options::="--force-confnew"  kubelet kubeadm kubectl docker-ce
+sudo apt-get -y update && sudo apt-get -y upgrade
 sudo apt-mark hold kubelet kubeadm kubectl
 
 kubeadm version -o short

@@ -24,14 +24,18 @@ if [ ! -z $STEP_SCRIPTS ]; then
 fi
 
 if [ -n "${CLEANUP}" -a "${CLEANUP}" -eq 1 ]; then
+	echo "Note: resources will be automatically deleted after deployment."
 	STEP_SCRIPTS+=" 12-cleanup.sh"
+else
+	echo "Note: resources will be left up after deployment.  To cleanup, run teardown.sh."
 fi
 
-echo $STEP_SCRIPTS
+echo "Running the following scripts: 01-provision-instances.sh ${STEP_SCRIPTS}"
 
 echo "Starting deployment, configuration and validation of Kubernetes cluster."
-echo "Deploying instances..."
+echo "Deploying instances with 01-provision-instances.sh..."
 bash -xv 01-provision-instances.sh > 01-provision-instances.sh.log 2>&1
+ls -l 01-provision-instances.sh.log
 . set-var.sh
 
 for SCRIPT in $STEP_SCRIPTS

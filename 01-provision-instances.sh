@@ -93,7 +93,7 @@ chmod 600 kubernetes.id_rsa
 
 #######################
 # Kubernetes Controllers
-#Using t3.micro instances
+#Using instance types as defined in config file
 
 #for i in 0 1 2; do
 for i in $(seq 0 $MAX_CONTROLLER_I) ; do
@@ -103,7 +103,7 @@ for i in $(seq 0 $MAX_CONTROLLER_I) ; do
     --count 1 \
     --key-name kubernetes \
     --security-group-ids ${SECURITY_GROUP_ID} \
-    --instance-type t3.medium \
+    --instance-type ${INSTANCE_TYPE} \
     --private-ip-address 10.0.1.1${i} \
     --user-data "name=controller-${i}" \
     --subnet-id ${SUBNET_ID} \
@@ -124,7 +124,7 @@ for i in $(seq 0 $MAX_WORKER_I); do
     --count 1 \
     --key-name kubernetes \
     --security-group-ids ${SECURITY_GROUP_ID} \
-    --instance-type t3.medium \
+    --instance-type ${INSTANCE_TYPE} \
     --private-ip-address 10.0.1.2${i} \
     --user-data "name=worker-${i}|pod-cidr=10.200.${i}.0/24" \
     --subnet-id ${SUBNET_ID} \
@@ -135,7 +135,7 @@ for i in $(seq 0 $MAX_WORKER_I); do
   echo "worker-${i} created"
 done
 
-for v in VPC_ID SUBNET_ID INTERNET_GATEWAY_ID ROUTE_TABLE_ID SECURITY_GROUP_ID LOAD_BALANCER_ARN TARGET_GROUP_ARN KUBERNETES_PUBLIC_ADDRESS IMAGE_ID 
+for v in VPC_ID SUBNET_ID INTERNET_GATEWAY_ID ROUTE_TABLE_ID SECURITY_GROUP_ID LOAD_BALANCER_ARN TARGET_GROUP_ARN KUBERNETES_PUBLIC_ADDRESS IMAGE_ID
 do
 	echo "$v"
 	export $v
@@ -144,6 +144,7 @@ do
 done
 chmod 0755 set-var.sh
 
+MAIN_CONTROLLER_INTERNAL_IP=""
 echo "Waiting for instances to be up..."
 for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
   EXTERNAL_IP=""
@@ -154,7 +155,15 @@ for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
 	if [ -z "${EXTERNAL_IP}" ]; then
 		sleep 30
 	else
-		break
+    	if [ "${INSTANCE}" = "controller-0" ]; then
+		  while [ -z "${MAIN_CONTROLLER_INTERNAL_IP}" ]; do
+    		MAIN_CONTROLLER_INTERNAL_IP=$(aws ec2 describe-instances \
+          		--filters "Name=tag:Name,Values=controller-0" "Name=instance-state-name,Values=running" \
+          		--output text --query 'Reservations[].Instances[].PrivateIpAddress')
+		  done
+    	echo "export MAIN_CONTROLLER_INTERNAL_IP=$MAIN_CONTROLLER_INTERNAL_IP" >> set-var.sh
+	    fi
+		break # break out of loop if have external IP, whether controller-0 or not
 	fi
   done
   echo "Instance ${INSTANCE} is running at external IP ${EXTERNAL_IP}"
