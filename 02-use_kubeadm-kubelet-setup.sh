@@ -67,11 +67,13 @@ which docker
 sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 sudo systemctl restart docker 
-sleep 60
-sudo systemctl status kubelet
-sudo systemctl status docker 
-sudo ls -l /var/run/docker.sock
-sudo journalctl -xeu kubelet
-sudo journalctl -xeu docker 
-sudo docker ps -a
+
+#Checking at this point doesn't make sense, as the kubelet is expected to be stuck in a loop until it's bootstrapped.
+#sleep 60
+#sudo systemctl status kubelet
+#sudo systemctl status docker 
+#sudo ls -l /var/run/docker.sock
+#sudo journalctl -xeu kubelet
+#sudo journalctl -xeu docker 
+#sudo docker ps -a
 

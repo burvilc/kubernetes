@@ -1,0 +1,568 @@
+#!/bin/bash
+
+INIT_DONE=""
++ INIT_DONE=
+KUBELET_SCRIPT="02-use_kubeadm-kubelet-setup.sh" 
++ KUBELET_SCRIPT=02-use_kubeadm-kubelet-setup.sh
+INIT_SCRIPT="02-use_kubeadm-initialize.sh"
++ INIT_SCRIPT=02-use_kubeadm-initialize.sh
+
+#for instance in controller-0 controller-1 controller-2 worker-0 worker-1 worker-2; do
+for INSTANCE in $CONTROLLER_NAMES $WORKER_NAMES; do
+  CONNECTED=""  # Initialize variables for each worker/controller
+  EXTERNAL_IP=""
+  while [ -z "${EXTERNAL_IP}" ]; do  # Wait until IP is reachable
+  	EXTERNAL_IP=$(aws ec2 describe-instances \
+    	--filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=running" \
+    	--output text --query 'Reservations[].Instances[].PublicIpAddress')
+  done
+  if [[ $INSTANCE =~ worker.* ]]; then
+    SCRIPTS="${KUBELET_SCRIPT}"
+    CMD="source set-var.sh; bash -xv $KUBELET_SCRIPT" 
+  elif [[ $INSTANCE =~ controller.* ]]; then
+    SCRIPTS="${KUBELET_SCRIPT} ${INIT_SCRIPT}"
+    CMD="source set-var.sh; bash -xv $KUBELET_SCRIPT; bash -xv $INIT_SCRIPT" 
+  fi 
+  while [ -z "${CONNECTED}" ]; do #-o -z "${INIT_DONE}" ]; do
+	echo "!!!!!!!!!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+	echo "INSTANCE: ${INSTANCE}"
+  	ls -l set-var.sh $SCRIPTS
+	# Copy files, initialize each node 
+  	scp -i kubernetes.id_rsa set-var.sh $SCRIPTS ubuntu@$EXTERNAL_IP:~/
+  	ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "${CMD}"  # Copy and remotely execute commands
+	RETVAL=$?
+	if [[ $INSTANCE =~ controller-0 ]]; then
+		MAIN_CONTROLLER_EXTERNAL_IP=$EXTERNAL_IP
+	fi	
+	if [ $RETVAL -eq 0 ]; then
+		CONNECTED=1
+		break #??? shouldn't need this, but seems to be looping again...
+	fi
+  done
+done
++ for INSTANCE in '$CONTROLLER_NAMES' '$WORKER_NAMES'
++ CONNECTED=
++ EXTERNAL_IP=
++ '[' -z '' ']'
+aws ec2 describe-instances     	--filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=running"     	--output text --query 'Reservations[].Instances[].PublicIpAddress'
+++ aws ec2 describe-instances --filters Name=tag:Name,Values=controller-0 Name=instance-state-name,Values=running --output text --query 'Reservations[].Instances[].PublicIpAddress'
++ EXTERNAL_IP=100.24.240.32
++ '[' -z 100.24.240.32 ']'
++ [[ controller-0 =~ worker.* ]]
++ [[ controller-0 =~ controller.* ]]
++ SCRIPTS='02-use_kubeadm-kubelet-setup.sh 02-use_kubeadm-initialize.sh'
++ CMD='source set-var.sh; bash -xv 02-use_kubeadm-kubelet-setup.sh; bash -xv 02-use_kubeadm-initialize.sh'
++ '[' -z '' ']'
++ echo '!!!!!!!!!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'
+!!!!!!!!!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
++ echo 'INSTANCE: controller-0'
+INSTANCE: controller-0
++ ls -l set-var.sh 02-use_kubeadm-kubelet-setup.sh 02-use_kubeadm-initialize.sh
+-rw-r--r--  1 burvil  staff  1571 Apr 17 22:29 02-use_kubeadm-initialize.sh
+-rw-r--r--  1 burvil  staff  2787 Apr 17 21:19 02-use_kubeadm-kubelet-setup.sh
+-rwxr-xr-x  1 burvil  staff   993 Apr 17 22:32 set-var.sh
++ scp -i kubernetes.id_rsa set-var.sh 02-use_kubeadm-kubelet-setup.sh 02-use_kubeadm-initialize.sh 'ubuntu@100.24.240.32:~/'
+Warning: Permanently added '100.24.240.32' (ECDSA) to the list of known hosts.
++ ssh -i kubernetes.id_rsa ubuntu@100.24.240.32 'source set-var.sh; bash -xv 02-use_kubeadm-kubelet-setup.sh; bash -xv 02-use_kubeadm-initialize.sh'
+#!/bin/bash -xv
+
+# Based on https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/ and 
+HOSTNAME=`hostname`
+++ hostname
++ HOSTNAME=ip-10-0-1-10
+
+#!!!! following steps should be done on both controllers, workers
+############################################
+# Check that MAC addresses unique
+sudo ip link
++ sudo ip link
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN mode DEFAULT group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 9001 qdisc mq state UP mode DEFAULT group default qlen 1000
+    link/ether 06:a2:4a:13:4c:57 brd ff:ff:ff:ff:ff:ff
+
+############################################
+# Let iptables see bridged traffic
+cat <<EOF > /etc/sysctl.d/k8s.conf
+net.bridge.bridge-nf-call-ip6tables = 1
+net.bridge.bridge-nf-call-iptables = 1
+EOF
++ cat
+02-use_kubeadm-kubelet-setup.sh: line 13: /etc/sysctl.d/k8s.conf: Permission denied
+sudo sysctl --system
++ sudo sysctl --system
+* Applying /etc/sysctl.d/10-console-messages.conf ...
+kernel.printk = 4 4 1 7
+* Applying /etc/sysctl.d/10-ipv6-privacy.conf ...
+net.ipv6.conf.all.use_tempaddr = 2
+net.ipv6.conf.default.use_tempaddr = 2
+* Applying /etc/sysctl.d/10-kernel-hardening.conf ...
+kernel.kptr_restrict = 1
+* Applying /etc/sysctl.d/10-link-restrictions.conf ...
+fs.protected_hardlinks = 1
+fs.protected_symlinks = 1
+* Applying /etc/sysctl.d/10-lxd-inotify.conf ...
+fs.inotify.max_user_instances = 1024
+* Applying /etc/sysctl.d/10-magic-sysrq.conf ...
+kernel.sysrq = 176
+* Applying /etc/sysctl.d/10-network-security.conf ...
+net.ipv4.conf.default.rp_filter = 1
+net.ipv4.conf.all.rp_filter = 1
+net.ipv4.tcp_syncookies = 1
+* Applying /etc/sysctl.d/10-ptrace.conf ...
+kernel.yama.ptrace_scope = 1
+* Applying /etc/sysctl.d/10-zeropage.conf ...
+vm.mmap_min_addr = 65536
+* Applying /usr/lib/sysctl.d/50-default.conf ...
+net.ipv4.conf.all.promote_secondaries = 1
+net.core.default_qdisc = fq_codel
+* Applying /etc/sysctl.d/99-cloudimg-ipv6.conf ...
+net.ipv6.conf.all.use_tempaddr = 0
+net.ipv6.conf.default.use_tempaddr = 0
+* Applying /etc/sysctl.d/99-sysctl.conf ...
+* Applying /etc/sysctl.conf ...
+
+#turn off swap
+sudo swapoff -a
++ sudo swapoff -a
+
+#netfilter off
+sudo modprobe br_netfilter
+br_netfilter           24576  0
+bridge                155648  1 br_netfilter
++ sudo modprobe br_netfilter
+sudo lsmod | grep br_netfilter
++ grep br_netfilter
++ sudo lsmod
+
+############################################
+
+
+###########################################
+# Make sure Docker CRI, other packages installed - do this on all nodes
+# Ubuntu
+# apt-get install docker
+sudo mkdir -p /var/lib/apt/lists/
++ sudo mkdir -p /var/lib/apt/lists/
+export DEBIAN_FRONTEND=noninteractive
++ export DEBIAN_FRONTEND=noninteractive
++ DEBIAN_FRONTEND=noninteractive
+echo 'debconf debconf/frontend select Noninteractive' | sudo debconf-set-selections
++ echo 'debconf debconf/frontend select Noninteractive'
++ sudo debconf-set-selections
+#Following two chmod not for production...
+sudo chmod 777 /var/cache/debconf/
++ sudo chmod 777 /var/cache/debconf/
+sudo chmod 777 /var/cache/debconf/passwords.dat
++ sudo chmod 777 /var/cache/debconf/passwords.dat
+sudo apt-get update && sudo apt-get install -y -o Dpkg::Options::="--force-confnew" apt-transport-https curl ca-certificates software-properties-common 
++ sudo apt-get update
+Hit:1 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic InRelease
+Get:2 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates InRelease [88.7 kB]
+Get:3 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-backports InRelease [74.6 kB]
+Get:4 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/universe amd64 Packages [8570 kB]
+Get:5 http://security.ubuntu.com/ubuntu bionic-security InRelease [88.7 kB]
+Get:6 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/universe Translation-en [4941 kB]
+Get:7 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/multiverse amd64 Packages [151 kB]
+Get:8 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/multiverse Translation-en [108 kB]
+Get:9 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/main amd64 Packages [915 kB]
+Get:10 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/main Translation-en [314 kB]
+Get:11 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/restricted amd64 Packages [43.9 kB]
+Get:12 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/restricted Translation-en [11.0 kB]
+Get:13 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/universe amd64 Packages [1065 kB]
+Get:14 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/universe Translation-en [330 kB]
+Get:15 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/multiverse amd64 Packages [10.8 kB]
+Get:16 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/multiverse Translation-en [4728 B]
+Get:17 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-backports/main amd64 Packages [2512 B]
+Get:18 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-backports/main Translation-en [1644 B]
+Get:19 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-backports/universe amd64 Packages [4020 B]
+Get:20 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-backports/universe Translation-en [1900 B]
+Get:21 http://security.ubuntu.com/ubuntu bionic-security/main amd64 Packages [692 kB]
+Get:22 http://security.ubuntu.com/ubuntu bionic-security/main Translation-en [221 kB]
+Get:23 http://security.ubuntu.com/ubuntu bionic-security/restricted amd64 Packages [34.3 kB]
+Get:24 http://security.ubuntu.com/ubuntu bionic-security/restricted Translation-en [8924 B]
+Get:25 http://security.ubuntu.com/ubuntu bionic-security/universe amd64 Packages [657 kB]
+Get:26 http://security.ubuntu.com/ubuntu bionic-security/universe Translation-en [218 kB]
+Get:27 http://security.ubuntu.com/ubuntu bionic-security/multiverse amd64 Packages [7176 B]
+Get:28 http://security.ubuntu.com/ubuntu bionic-security/multiverse Translation-en [2764 B]
+Fetched 18.6 MB in 3s (5603 kB/s)
+Reading package lists...
+Reading package lists...
+Building dependency tree...+ sudo apt-get install -y -o Dpkg::Options::=--force-confnew apt-transport-https curl ca-certificates software-properties-common
+
+Reading state information...
+ca-certificates is already the newest version (20180409).
+ca-certificates set to manually installed.
+curl is already the newest version (7.58.0-2ubuntu3.8).
+curl set to manually installed.
+software-properties-common is already the newest version (0.96.24.32.12).
+software-properties-common set to manually installed.
+The following NEW packages will be installed:
+  apt-transport-https
+0 upgraded, 1 newly installed, 0 to remove and 4 not upgraded.
+Need to get 1692 B of archives.
+After this operation, 153 kB of additional disk space will be used.
+Get:1 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/universe amd64 apt-transport-https all 1.6.12 [1692 B]
+Fetched 1692 B in 0s (0 B/s)
+Selecting previously unselected package apt-transport-https.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 56588 files and directories currently installed.)
+Preparing to unpack .../apt-transport-https_1.6.12_all.deb ...
+Unpacking apt-transport-https (1.6.12) ...
+Setting up apt-transport-https (1.6.12) ...
+#Ensure iptables tooling does not use the nftables backend
+#Ubuntu 
+# ensure legacy binaries are installed
+sudo apt-cache search arptables
++ sudo apt-cache search arptables
+arptables - ARP table administration
+iptables-nftables-compat - iptables compat tools for nftables
+nftables - Program to control packet filtering rules by Netfilter project
+sudo apt-get install -y iptables arptables ebtables ethtool
++ sudo apt-get install -y iptables arptables ebtables ethtool
+Reading package lists...
+Building dependency tree...
+Reading state information...
+ethtool is already the newest version (1:4.15-0ubuntu1).
+ethtool set to manually installed.
+iptables is already the newest version (1.6.1-2ubuntu2).
+iptables set to manually installed.
+ebtables is already the newest version (2.0.10.4-3.5ubuntu2.18.04.3).
+ebtables set to manually installed.
+The following NEW packages will be installed:
+  arptables
+0 upgraded, 1 newly installed, 0 to remove and 4 not upgraded.
+Need to get 33.2 kB of archives.
+After this operation, 85.0 kB of additional disk space will be used.
+Get:1 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/universe amd64 arptables amd64 0.0.3.4-1build1 [33.2 kB]
+Fetched 33.2 kB in 0s (0 B/s)
+Selecting previously unselected package arptables.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 56592 files and directories currently installed.)
+Preparing to unpack .../arptables_0.0.3.4-1build1_amd64.deb ...
+Unpacking arptables (0.0.3.4-1build1) ...
+Setting up arptables (0.0.3.4-1build1) ...
+Processing triggers for man-db (2.8.3-2ubuntu0.1) ...
+sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
++ sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
+update-alternatives: error: no alternatives for iptables
+sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
++ sudo update-alternatives --set ip6tables /usr/sbin/ip6tables-legacy
+update-alternatives: error: no alternatives for ip6tables
+sudo update-alternatives --set arptables /usr/sbin/arptables-legacy
++ sudo update-alternatives --set arptables /usr/sbin/arptables-legacy
+update-alternatives: error: no alternatives for arptables
+sudo update-alternatives --set ebtables /usr/sbin/ebtables-legacy
++ sudo update-alternatives --set ebtables /usr/sbin/ebtables-legacy
+update-alternatives: error: no alternatives for ebtables
+
+curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo apt-key add -
++ curl -s https://packages.cloud.google.com/apt/doc/apt-key.gpg
++ sudo apt-key add -
+Warning: apt-key output should not be parsed (stdout is not a terminal)
+OK
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
++ curl -fsSL https://download.docker.com/linux/ubuntu/gpg
++ sudo apt-key add -
+Warning: apt-key output should not be parsed (stdout is not a terminal)
+OK
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable"
++ sudo add-apt-repository 'deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable'
+Hit:1 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic InRelease
+Hit:2 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates InRelease
+Hit:3 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-backports InRelease
+Hit:4 http://security.ubuntu.com/ubuntu bionic-security InRelease
+Get:5 https://download.docker.com/linux/ubuntu bionic InRelease [64.4 kB]
+Get:6 https://download.docker.com/linux/ubuntu bionic/stable amd64 Packages [11.0 kB]
+Fetched 75.5 kB in 0s (165 kB/s)
+Reading package lists...
+cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+EOF
++ cat
++ sudo tee /etc/apt/sources.list.d/kubernetes.list
+deb https://apt.kubernetes.io/ kubernetes-xenial main
+sudo apt-get update
++ sudo apt-get update
+Hit:1 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic InRelease
+Hit:2 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates InRelease
+Hit:3 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-backports InRelease
+Hit:4 https://download.docker.com/linux/ubuntu bionic InRelease
+Hit:5 http://security.ubuntu.com/ubuntu bionic-security InRelease
+Get:6 https://packages.cloud.google.com/apt kubernetes-xenial InRelease [8993 B]
+Get:7 https://packages.cloud.google.com/apt kubernetes-xenial/main amd64 Packages [35.3 kB]
+Fetched 44.3 kB in 1s (83.6 kB/s)
+Reading package lists...
+sudo apt-get install -y -o Dpkg::Options::="--force-confnew"  kubelet kubeadm kubectl docker-ce
++ sudo apt-get install -y -o Dpkg::Options::=--force-confnew kubelet kubeadm kubectl docker-ce
+Reading package lists...
+Building dependency tree...
+Reading state information...
+The following additional packages will be installed:
+  aufs-tools cgroupfs-mount conntrack containerd.io cri-tools docker-ce-cli
+  kubernetes-cni libltdl7 pigz socat
+The following NEW packages will be installed:
+  aufs-tools cgroupfs-mount conntrack containerd.io cri-tools docker-ce
+  docker-ce-cli kubeadm kubectl kubelet kubernetes-cni libltdl7 pigz socat
+0 upgraded, 14 newly installed, 0 to remove and 4 not upgraded.
+Need to get 138 MB of archives.
+After this operation, 660 MB of additional disk space will be used.
+Get:1 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/universe amd64 pigz amd64 2.4-1 [57.4 kB]
+Get:2 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/universe amd64 aufs-tools amd64 1:4.9+20170918-1ubuntu1 [104 kB]
+Get:3 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/universe amd64 cgroupfs-mount all 1.4 [6320 B]
+Get:4 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/main amd64 conntrack amd64 1:1.4.4+snapshot20161117-6ubuntu2 [30.6 kB]
+Get:5 https://download.docker.com/linux/ubuntu bionic/stable amd64 containerd.io amd64 1.2.13-1 [20.1 MB]
+Get:6 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/main amd64 socat amd64 1.7.3.2-2ubuntu2 [342 kB]
+Get:7 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic/main amd64 libltdl7 amd64 2.4.6-2 [38.8 kB]
+Get:8 https://packages.cloud.google.com/apt kubernetes-xenial/main amd64 cri-tools amd64 1.13.0-00 [8776 kB]
+Get:13 https://download.docker.com/linux/ubuntu bionic/stable amd64 docker-ce-cli amd64 5:19.03.8~3-0~ubuntu-bionic [42.6 MB]
+Get:9 https://packages.cloud.google.com/apt kubernetes-xenial/main amd64 kubernetes-cni amd64 0.7.5-00 [6473 kB]
+Get:10 https://packages.cloud.google.com/apt kubernetes-xenial/main amd64 kubelet amd64 1.18.2-00 [19.5 MB]
+Get:14 https://download.docker.com/linux/ubuntu bionic/stable amd64 docker-ce amd64 5:19.03.8~3-0~ubuntu-bionic [22.9 MB]
+Get:11 https://packages.cloud.google.com/apt kubernetes-xenial/main amd64 kubectl amd64 1.18.2-00 [8825 kB]
+Get:12 https://packages.cloud.google.com/apt kubernetes-xenial/main amd64 kubeadm amd64 1.18.2-00 [8162 kB]
+Fetched 138 MB in 2s (61.7 MB/s)
+Selecting previously unselected package pigz.
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 56601 files and directories currently installed.)
+Preparing to unpack .../00-pigz_2.4-1_amd64.deb ...
+Unpacking pigz (2.4-1) ...
+Selecting previously unselected package aufs-tools.
+Preparing to unpack .../01-aufs-tools_1%3a4.9+20170918-1ubuntu1_amd64.deb ...
+Unpacking aufs-tools (1:4.9+20170918-1ubuntu1) ...
+Selecting previously unselected package cgroupfs-mount.
+Preparing to unpack .../02-cgroupfs-mount_1.4_all.deb ...
+Unpacking cgroupfs-mount (1.4) ...
+Selecting previously unselected package conntrack.
+Preparing to unpack .../03-conntrack_1%3a1.4.4+snapshot20161117-6ubuntu2_amd64.deb ...
+Unpacking conntrack (1:1.4.4+snapshot20161117-6ubuntu2) ...
+Selecting previously unselected package containerd.io.
+Preparing to unpack .../04-containerd.io_1.2.13-1_amd64.deb ...
+Unpacking containerd.io (1.2.13-1) ...
+Selecting previously unselected package cri-tools.
+Preparing to unpack .../05-cri-tools_1.13.0-00_amd64.deb ...
+Unpacking cri-tools (1.13.0-00) ...
+Selecting previously unselected package docker-ce-cli.
+Preparing to unpack .../06-docker-ce-cli_5%3a19.03.8~3-0~ubuntu-bionic_amd64.deb ...
+Unpacking docker-ce-cli (5:19.03.8~3-0~ubuntu-bionic) ...
+Selecting previously unselected package docker-ce.
+Preparing to unpack .../07-docker-ce_5%3a19.03.8~3-0~ubuntu-bionic_amd64.deb ...
+Unpacking docker-ce (5:19.03.8~3-0~ubuntu-bionic) ...
+Selecting previously unselected package kubernetes-cni.
+Preparing to unpack .../08-kubernetes-cni_0.7.5-00_amd64.deb ...
+Unpacking kubernetes-cni (0.7.5-00) ...
+Selecting previously unselected package socat.
+Preparing to unpack .../09-socat_1.7.3.2-2ubuntu2_amd64.deb ...
+Unpacking socat (1.7.3.2-2ubuntu2) ...
+Selecting previously unselected package kubelet.
+Preparing to unpack .../10-kubelet_1.18.2-00_amd64.deb ...
+Unpacking kubelet (1.18.2-00) ...
+Selecting previously unselected package kubectl.
+Preparing to unpack .../11-kubectl_1.18.2-00_amd64.deb ...
+Unpacking kubectl (1.18.2-00) ...
+Selecting previously unselected package kubeadm.
+Preparing to unpack .../12-kubeadm_1.18.2-00_amd64.deb ...
+Unpacking kubeadm (1.18.2-00) ...
+Selecting previously unselected package libltdl7:amd64.
+Preparing to unpack .../13-libltdl7_2.4.6-2_amd64.deb ...
+Unpacking libltdl7:amd64 (2.4.6-2) ...
+Setting up aufs-tools (1:4.9+20170918-1ubuntu1) ...
+Setting up conntrack (1:1.4.4+snapshot20161117-6ubuntu2) ...
+Setting up kubernetes-cni (0.7.5-00) ...
+Setting up containerd.io (1.2.13-1) ...
+Created symlink /etc/systemd/system/multi-user.target.wants/containerd.service → /lib/systemd/system/containerd.service.
+Setting up cri-tools (1.13.0-00) ...
+Setting up socat (1.7.3.2-2ubuntu2) ...
+Setting up cgroupfs-mount (1.4) ...
+Setting up kubelet (1.18.2-00) ...
+Created symlink /etc/systemd/system/multi-user.target.wants/kubelet.service → /lib/systemd/system/kubelet.service.
+Setting up libltdl7:amd64 (2.4.6-2) ...
+Setting up kubectl (1.18.2-00) ...
+Setting up docker-ce-cli (5:19.03.8~3-0~ubuntu-bionic) ...
+Setting up kubeadm (1.18.2-00) ...
+Setting up pigz (2.4-1) ...
+Setting up docker-ce (5:19.03.8~3-0~ubuntu-bionic) ...
+Created symlink /etc/systemd/system/multi-user.target.wants/docker.service → /lib/systemd/system/docker.service.
+Created symlink /etc/systemd/system/sockets.target.wants/docker.socket → /lib/systemd/system/docker.socket.
+Processing triggers for libc-bin (2.27-3ubuntu1) ...
+Processing triggers for systemd (237-3ubuntu10.39) ...
+Processing triggers for man-db (2.8.3-2ubuntu0.1) ...
+Processing triggers for ureadahead (0.100.0-21) ...
+sudo apt-get -y update && sudo apt-get -y upgrade
++ sudo apt-get -y update
+Hit:1 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic InRelease
+Hit:2 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates InRelease
+Hit:3 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-backports InRelease
+Hit:4 https://download.docker.com/linux/ubuntu bionic InRelease
+Hit:5 http://security.ubuntu.com/ubuntu bionic-security InRelease
+Hit:6 https://packages.cloud.google.com/apt kubernetes-xenial InRelease
+Reading package lists...
++ sudo apt-get -y upgrade
+Reading package lists...
+Building dependency tree...
+Reading state information...
+Calculating upgrade...
+The following packages will be upgraded:
+  git git-man lxcfs sosreport
+4 upgraded, 0 newly installed, 0 to remove and 0 not upgraded.
+Need to get 4920 kB of archives.
+After this operation, 12.3 kB of additional disk space will be used.
+Get:1 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/main amd64 git-man all 1:2.17.1-1ubuntu0.6 [803 kB]
+Get:2 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/main amd64 git amd64 1:2.17.1-1ubuntu0.6 [3912 kB]
+Get:3 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/main amd64 lxcfs amd64 3.0.3-0ubuntu1~18.04.2 [39.0 kB]
+Get:4 http://us-east-1.ec2.archive.ubuntu.com/ubuntu bionic-updates/main amd64 sosreport amd64 3.9-1ubuntu0.18.04.2 [165 kB]
+Fetched 4920 kB in 0s (55.6 MB/s)
+(Reading database ... (Reading database ... 5%(Reading database ... 10%(Reading database ... 15%(Reading database ... 20%(Reading database ... 25%(Reading database ... 30%(Reading database ... 35%(Reading database ... 40%(Reading database ... 45%(Reading database ... 50%(Reading database ... 55%(Reading database ... 60%(Reading database ... 65%(Reading database ... 70%(Reading database ... 75%(Reading database ... 80%(Reading database ... 85%(Reading database ... 90%(Reading database ... 95%(Reading database ... 100%(Reading database ... 56982 files and directories currently installed.)
+Preparing to unpack .../git-man_1%3a2.17.1-1ubuntu0.6_all.deb ...
+Unpacking git-man (1:2.17.1-1ubuntu0.6) over (1:2.17.1-1ubuntu0.5) ...
+Preparing to unpack .../git_1%3a2.17.1-1ubuntu0.6_amd64.deb ...
+Unpacking git (1:2.17.1-1ubuntu0.6) over (1:2.17.1-1ubuntu0.5) ...
+Preparing to unpack .../lxcfs_3.0.3-0ubuntu1~18.04.2_amd64.deb ...
+Unpacking lxcfs (3.0.3-0ubuntu1~18.04.2) over (3.0.3-0ubuntu1~18.04.1) ...
+Preparing to unpack .../sosreport_3.9-1ubuntu0.18.04.2_amd64.deb ...
+Unpacking sosreport (3.9-1ubuntu0.18.04.2) over (3.9-1ubuntu0.18.04.1) ...
+Setting up git-man (1:2.17.1-1ubuntu0.6) ...
+Setting up sosreport (3.9-1ubuntu0.18.04.2) ...
+Setting up lxcfs (3.0.3-0ubuntu1~18.04.2) ...
+Setting up git (1:2.17.1-1ubuntu0.6) ...
+Processing triggers for systemd (237-3ubuntu10.39) ...
+Processing triggers for man-db (2.8.3-2ubuntu0.1) ...
+Processing triggers for ureadahead (0.100.0-21) ...
+sudo apt-mark hold kubelet kubeadm kubectl
++ sudo apt-mark hold kubelet kubeadm kubectl
+kubelet set on hold.
+kubeadm set on hold.
+kubectl set on hold.
+
+kubeadm version -o short
++ kubeadm version -o short
+v1.18.2
+/usr/bin/kubeadm
+which kubeadm 
++ which kubeadm
+
+dpkg -l| grep -i docker
+ii  docker-ce                      5:19.03.8~3-0~ubuntu-bionic         amd64        Docker: the open-source application container engine
+ii  docker-ce-cli                  5:19.03.8~3-0~ubuntu-bionic         amd64        Docker CLI: the open-source application container engine
+/usr/bin/docker
++ dpkg -l
++ grep -i docker
+which docker
++ which docker
+
+sudo systemctl daemon-reload
++ sudo systemctl daemon-reload
+sudo systemctl restart kubelet
++ sudo systemctl restart kubelet
+sudo systemctl restart docker 
++ sudo systemctl restart docker
+
+#Checking at this point doesn't make sense, as the kubelet is expected to be stuck in a loop until it's bootstrapped.
+#sleep 60
+#sudo systemctl status kubelet
+#sudo systemctl status docker 
+#sudo ls -l /var/run/docker.sock
+#sudo journalctl -xeu kubelet
+#sudo journalctl -xeu docker 
+#sudo docker ps -a
+
+#!/bin/bash -xv
+
+# Initialize control plane - following steps only on master
+sudo kubeadm config images pull
++ sudo kubeadm config images pull
+W0418 05:33:21.323257    6939 configset.go:202] WARNING: kubeadm cannot validate component configs for API groups [kubelet.config.k8s.io kubeproxy.config.k8s.io]
+[config/images] Pulled k8s.gcr.io/kube-apiserver:v1.18.2
+[config/images] Pulled k8s.gcr.io/kube-controller-manager:v1.18.2
+[config/images] Pulled k8s.gcr.io/kube-scheduler:v1.18.2
+[config/images] Pulled k8s.gcr.io/kube-proxy:v1.18.2
+[config/images] Pulled k8s.gcr.io/pause:3.2
+[config/images] Pulled k8s.gcr.io/etcd:3.4.3-0
+[config/images] Pulled k8s.gcr.io/coredns:1.6.7
+if [ ${NUM_CONTROLLERS} -le 1 ]; then
+	CMD="sudo kubeadm init"
+else
+	#CMD="sudo kubeadm init --control-plane-endpoint $MAIN_CONTROLLER_INTERNAL_IP --apiserver-advertise-address  $MAIN_CONTROLLER_INTERNAL_IP"
+	#CMD="sudo kubeadm init --control-plane-endpoint ${MAIN_CONTROLLER_INTERNAL_IP}:6443" 
+	CMD="sudo kubeadm init --control-plane-endpoint ${KUBERNETES_PUBLIC_ADDRESS}:6443" 
+fi
++ '[' 2 -le 1 ']'
++ CMD='sudo kubeadm init --control-plane-endpoint kubernetes-6da6f67b2b0add61.elb.us-east-1.amazonaws.com:6443'
+$CMD
++ sudo kubeadm init --control-plane-endpoint kubernetes-6da6f67b2b0add61.elb.us-east-1.amazonaws.com:6443
+[init] Using Kubernetes version: v1.18.2
+[preflight] Running pre-flight checks
+W0418 05:33:38.476442    7220 configset.go:202] WARNING: kubeadm cannot validate component configs for API groups [kubelet.config.k8s.io kubeproxy.config.k8s.io]
+	[WARNING IsDockerSystemdCheck]: detected "cgroupfs" as the Docker cgroup driver. The recommended driver is "systemd". Please follow the guide at https://kubernetes.io/docs/setup/cri/
+[preflight] Pulling images required for setting up a Kubernetes cluster
+[preflight] This might take a minute or two, depending on the speed of your internet connection
+[preflight] You can also perform this action in beforehand using 'kubeadm config images pull'
+[kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
+[kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
+[kubelet-start] Starting the kubelet
+[certs] Using certificateDir folder "/etc/kubernetes/pki"
+[certs] Generating "ca" certificate and key
+[certs] Generating "apiserver" certificate and key
+[certs] apiserver serving cert is signed for DNS names [ip-10-0-1-10 kubernetes kubernetes.default kubernetes.default.svc kubernetes.default.svc.cluster.local kubernetes-6da6f67b2b0add61.elb.us-east-1.amazonaws.com] and IPs [10.96.0.1 10.0.1.10]
+[certs] Generating "apiserver-kubelet-client" certificate and key
+[certs] Generating "front-proxy-ca" certificate and key
+[certs] Generating "front-proxy-client" certificate and key
+[certs] Generating "etcd/ca" certificate and key
+[certs] Generating "etcd/server" certificate and key
+[certs] etcd/server serving cert is signed for DNS names [ip-10-0-1-10 localhost] and IPs [10.0.1.10 127.0.0.1 ::1]
+[certs] Generating "etcd/peer" certificate and key
+[certs] etcd/peer serving cert is signed for DNS names [ip-10-0-1-10 localhost] and IPs [10.0.1.10 127.0.0.1 ::1]
+[certs] Generating "etcd/healthcheck-client" certificate and key
+[certs] Generating "apiserver-etcd-client" certificate and key
+[certs] Generating "sa" key and public key
+[kubeconfig] Using kubeconfig folder "/etc/kubernetes"
+[kubeconfig] Writing "admin.conf" kubeconfig file
+[kubeconfig] Writing "kubelet.conf" kubeconfig file
+[kubeconfig] Writing "controller-manager.conf" kubeconfig file
+[kubeconfig] Writing "scheduler.conf" kubeconfig file
+[control-plane] Using manifest folder "/etc/kubernetes/manifests"
+[control-plane] Creating static Pod manifest for "kube-apiserver"
+[control-plane] Creating static Pod manifest for "kube-controller-manager"
+[control-plane] Creating static Pod manifest for "kube-scheduler"
+W0418 05:33:43.033077    7220 manifests.go:225] the default kube-apiserver authorization-mode is "Node,RBAC"; using "Node,RBAC"
+[etcd] Creating static Pod manifest for local etcd in "/etc/kubernetes/manifests"
+W0418 05:33:43.034157    7220 manifests.go:225] the default kube-apiserver authorization-mode is "Node,RBAC"; using "Node,RBAC"
+[wait-control-plane] Waiting for the kubelet to boot up the control plane as static Pods from directory "/etc/kubernetes/manifests". This can take up to 4m0s
+[kubelet-check] Initial timeout of 40s passed.
+
+	Unfortunately, an error has occurred:
+		timed out waiting for the condition
+
+	This error is likely caused by:
+		- The kubelet is not running
+		- The kubelet is unhealthy due to a misconfiguration of the node in some way (required cgroups disabled)
+
+	If you are on a systemd-powered system, you can try to troubleshoot the error with the following commands:
+		- 'systemctl status kubelet'
+		- 'journalctl -xeu kubelet'
+
+	Additionally, a control plane component may have crashed or exited when started by the container runtime.
+	To troubleshoot, list all containers using your preferred container runtimes CLI.
+
+	Here is one example how you may list all Kubernetes containers running in docker:
+		- 'docker ps -a | grep kube | grep -v pause'
+		Once you have found the failing container, you can inspect its logs with:
+		- 'docker logs CONTAINERID'
+
+error execution phase wait-control-plane: couldn't initialize a Kubernetes cluster
+To see the stack trace of this error execute with --v=5 or higher
+RETVAL=$?
++ RETVAL=1
+sleep 300
++ sleep 300
+Connection to 100.24.240.32 closed by remote host.
+
+barnabas:aws burvil$ nmap kubernetes-6da6f67b2b0add61.elb.us-east-1.amazonaws.com
+
+Starting Nmap 5.51 ( http://nmap.org ) at 2020-04-17 22:39 PDT
+Nmap scan report for kubernetes-6da6f67b2b0add61.elb.us-east-1.amazonaws.com (52.73.220.117)
+Host is up (0.086s latency).
+rDNS record for 52.73.220.117: ec2-52-73-220-117.compute-1.amazonaws.com
+Not shown: 996 filtered ports
+PORT     STATE SERVICE
+21/tcp   open  ftp
+443/tcp  open  https
+554/tcp  open  rtsp
+7070/tcp open  realserver

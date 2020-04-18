@@ -55,9 +55,9 @@ for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
   	JOIN_CMD="sudo "
 	JOIN_CMD+=`ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "${CMD}"`
 	# different join commands for control plane vs. worker....!!!!!!!!!!!!!!!!!!! 
-	#if [[ $INSTANCE =~ controller.* ]]; then
-	#	JOIN_CMD+=" --control-plane"
-	#fi
+	if [[ $INSTANCE =~ controller.* ]]; then
+		JOIN_CMD+=" --control-plane"
+	fi
   	ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "source set-var.sh; ${JOIN_CMD}"
 done
 sleep 60

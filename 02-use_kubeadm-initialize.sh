@@ -6,7 +6,8 @@ if [ ${NUM_CONTROLLERS} -le 1 ]; then
 	CMD="sudo kubeadm init"
 else
 	#CMD="sudo kubeadm init --control-plane-endpoint $MAIN_CONTROLLER_INTERNAL_IP --apiserver-advertise-address  $MAIN_CONTROLLER_INTERNAL_IP"
-	CMD="sudo kubeadm init --control-plane-endpoint $MAIN_CONTROLLER_INTERNAL_IP" 
+	#CMD="sudo kubeadm init --control-plane-endpoint ${MAIN_CONTROLLER_INTERNAL_IP}:6443" 
+	CMD="sudo kubeadm init --control-plane-endpoint ${KUBERNETES_PUBLIC_ADDRESS}:6443" 
 fi
 $CMD
 RETVAL=$?
