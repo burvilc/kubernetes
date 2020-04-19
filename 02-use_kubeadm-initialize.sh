@@ -7,10 +7,12 @@ if [ ${NUM_CONTROLLERS} -le 1 ]; then
 else
 	#CMD="sudo kubeadm init --control-plane-endpoint $MAIN_CONTROLLER_INTERNAL_IP --apiserver-advertise-address  $MAIN_CONTROLLER_INTERNAL_IP"
 	#CMD="sudo kubeadm init --control-plane-endpoint ${MAIN_CONTROLLER_INTERNAL_IP}:6443" 
-	CMD="sudo kubeadm init --control-plane-endpoint ${KUBERNETES_PUBLIC_ADDRESS}:6443" 
+	CMD="sudo kubeadm init --control-plane-endpoint ${KUBERNETES_PUBLIC_ADDRESS}:443 --upload-certs "
 fi
-$CMD
+$CMD > ~/init.txt 2>&1
+cat ~/init.txt
 RETVAL=$?
+CERT=`egrep '\-\-certificate-key' ~/init.txt | egrep '\-\-control-plane' | awk {'print $3'}`
 sleep 300
 if [ $RETVAL -ne 0 ]; then
 	echo "Troubleshooting information:"
@@ -35,6 +37,10 @@ while [ -n "${RESULT}" ] && ( [ "${RESULT}" -ne 0 ] ); do
 	RESULT=$?
 	sleep 5
 done
+
+if [ ! -z "${CERT}" ]; then
+	echo $CERT > ~/crt.txt
+fi
 	
 #kubeadm join --token $TOKEN <control-plane-host>:<control-plane-port> --discovery-token-ca-cert-hash sha256:${HASH}
 # For worker nodes - run this from worker node:

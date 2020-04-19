@@ -13,29 +13,25 @@ for INSTANCE in $CONTROLLER_NAMES $WORKER_NAMES; do
     	--filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=running" \
     	--output text --query 'Reservations[].Instances[].PublicIpAddress')
   done
-  if [[ $INSTANCE =~ worker.* ]]; then
-    SCRIPTS="${KUBELET_SCRIPT}"
-    CMD="source set-var.sh; bash -xv $KUBELET_SCRIPT" 
-  elif [[ $INSTANCE =~ controller.* ]]; then
+  if [ "${INSTANCE}" == "controller-0" ]; then
     SCRIPTS="${KUBELET_SCRIPT} ${INIT_SCRIPT}"
     CMD="source set-var.sh; bash -xv $KUBELET_SCRIPT; bash -xv $INIT_SCRIPT" 
+  else 
+    SCRIPTS="${KUBELET_SCRIPT}"
+    CMD="source set-var.sh; bash -xv $KUBELET_SCRIPT" 
   fi 
-  while [ -z "${CONNECTED}" ]; do #-o -z "${INIT_DONE}" ]; do
-	echo "!!!!!!!!!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
-	echo "INSTANCE: ${INSTANCE}"
-  	ls -l set-var.sh $SCRIPTS
-	# Copy files, initialize each node 
-  	scp -i kubernetes.id_rsa set-var.sh $SCRIPTS ubuntu@$EXTERNAL_IP:~/
-  	ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "${CMD}"  # Copy and remotely execute commands
-	RETVAL=$?
-	if [[ $INSTANCE =~ controller-0 ]]; then
-		MAIN_CONTROLLER_EXTERNAL_IP=$EXTERNAL_IP
-	fi	
-	if [ $RETVAL -eq 0 ]; then
-		CONNECTED=1
-		break #??? shouldn't need this, but seems to be looping again...
-	fi
-  done
+  echo "!!!!!!!!!+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++"
+  echo "INSTANCE: ${INSTANCE}"
+  ls -l set-var.sh $SCRIPTS
+  # Copy files, initialize each node 
+  scp -i kubernetes.id_rsa set-var.sh $SCRIPTS ubuntu@$EXTERNAL_IP:~/
+  ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "${CMD}"  # Copy and remotely execute commands
+  if [ "${INSTANCE}" == "controller-0" ]; then
+    scp -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP:~/crt.txt . 
+	CERT=`cat crt.txt`
+    ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "rm -f ~/crt.txt"  # Copy and remotely execute commands
+    MAIN_CONTROLLER_EXTERNAL_IP=$EXTERNAL_IP
+  fi	
 done
 
 # Copy files, so can run kubectl on main controller node
@@ -44,7 +40,7 @@ scp -i kubernetes.id_rsa -r ubuntu@${MAIN_CONTROLLER_EXTERNAL_IP}:.kube .
 
 # Join each node to cluster
 for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
-	if [[ $INSTANCE =~ controller.* ]]; then
+	if [ "${INSTANCE}" == "controller-0" ]; then
 		continue  # Skip to next node if main controller, since kubeadm init on that node means already done
 	fi
 	EXTERNAL_IP=$(aws ec2 describe-instances \
@@ -56,7 +52,7 @@ for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
 	JOIN_CMD+=`ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "${CMD}"`
 	# different join commands for control plane vs. worker....!!!!!!!!!!!!!!!!!!! 
 	if [[ $INSTANCE =~ controller.* ]]; then
-		JOIN_CMD+=" --control-plane"
+		JOIN_CMD+=" --control-plane --certificate-key ${CERT}"
 	fi
   	ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "source set-var.sh; ${JOIN_CMD}"
 done
