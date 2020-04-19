@@ -8,6 +8,9 @@ else
 fi
 echo $MAPPING
 
+#List of instance IDs for controllers, to be used later for target group
+TARGET_GROUP_IPS=""
+
 VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --output text --query 'Vpc.VpcId')
 aws ec2 create-tags --resources ${VPC_ID} --tags Key=Name,Value=kubernetes-the-hard-way
 aws ec2 modify-vpc-attribute --vpc-id ${VPC_ID} --enable-dns-support '{"Value": true}'
@@ -49,32 +52,6 @@ aws ec2 authorize-security-group-ingress --group-id ${SECURITY_GROUP_ID} --proto
 aws ec2 authorize-security-group-ingress --group-id ${SECURITY_GROUP_ID} --protocol tcp --port 443 --cidr 0.0.0.0/0
 aws ec2 authorize-security-group-ingress --group-id ${SECURITY_GROUP_ID} --protocol icmp --port -1 --cidr 0.0.0.0/0
 
-####################
-#Kubernetes Public Access - Create a Network Load Balancer
-  LOAD_BALANCER_ARN=$(aws elbv2 create-load-balancer \
-    --name kubernetes \
-    --subnets ${SUBNET_ID} \
-    --scheme internet-facing \
-    --type network \
-    --output text --query 'LoadBalancers[].LoadBalancerArn')
-  TARGET_GROUP_ARN=$(aws elbv2 create-target-group \
-    --name kubernetes \
-    --protocol TCP \
-    --port 6443 \
-    --vpc-id ${VPC_ID} \
-    --target-type ip \
-    --output text --query 'TargetGroups[].TargetGroupArn')
-  aws elbv2 register-targets --target-group-arn ${TARGET_GROUP_ARN} --targets Id=10.0.1.1{0,1,2}
-  aws elbv2 create-listener \
-    --load-balancer-arn ${LOAD_BALANCER_ARN} \
-    --protocol TCP \
-    --port 443 \
-    --default-actions Type=forward,TargetGroupArn=${TARGET_GROUP_ARN} \
-    --output text --query 'Listeners[].ListenerArn'
-KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
-  --load-balancer-arns ${LOAD_BALANCER_ARN} \
-  --output text --query 'LoadBalancers[].DNSName')
-
 #######################
 # Compute Instances
 #Instance Image
@@ -97,6 +74,7 @@ chmod 600 kubernetes.id_rsa
 
 #for i in 0 1 2; do
 for i in $(seq 0 $MAX_CONTROLLER_I) ; do
+  IP=10.0.1.1${i}
   instance_id=$(aws ec2 run-instances \
     --associate-public-ip-address \
     --image-id ${IMAGE_ID} \
@@ -104,15 +82,42 @@ for i in $(seq 0 $MAX_CONTROLLER_I) ; do
     --key-name kubernetes \
     --security-group-ids ${SECURITY_GROUP_ID} \
     --instance-type ${INSTANCE_TYPE} \
-    --private-ip-address 10.0.1.1${i} \
+    --private-ip-address ${IP} \
     --user-data "name=controller-${i}" \
     --subnet-id ${SUBNET_ID} \
     --block-device-mappings="${MAPPING}" \
     --output text --query 'Instances[].InstanceId')
   aws ec2 modify-instance-attribute --instance-id ${instance_id} --no-source-dest-check
   aws ec2 create-tags --resources ${instance_id} --tags "Key=Name,Value=controller-${i}"
+  TARGET_GROUP_IPS+="Id=${IP} "
   echo "controller-${i} created "
 done
+
+####################
+#Kubernetes Public Access - Create a Network Load Balancer
+  LOAD_BALANCER_ARN=$(aws elbv2 create-load-balancer \
+    --name kubernetes \
+    --subnets ${SUBNET_ID} \
+    --scheme internet-facing \
+    --type network \
+    --output text --query 'LoadBalancers[].LoadBalancerArn')
+  TARGET_GROUP_ARN=$(aws elbv2 create-target-group \
+    --name kubernetes \
+    --protocol TCP \
+    --port 6443 \
+    --vpc-id ${VPC_ID} \
+    --target-type ip \
+    --output text --query 'TargetGroups[].TargetGroupArn')
+  aws elbv2 register-targets --target-group-arn ${TARGET_GROUP_ARN} --targets ${TARGET_GROUP_IPS}
+  aws elbv2 create-listener \
+    --load-balancer-arn ${LOAD_BALANCER_ARN} \
+    --protocol TCP \
+    --port 443 \
+    --default-actions Type=forward,TargetGroupArn=${TARGET_GROUP_ARN} \
+    --output text --query 'Listeners[].ListenerArn'
+KUBERNETES_PUBLIC_ADDRESS=$(aws elbv2 describe-load-balancers \
+  --load-balancer-arns ${LOAD_BALANCER_ARN} \
+  --output text --query 'LoadBalancers[].DNSName')
 
 #########################
 #Kubernetes Workers
@@ -153,7 +158,7 @@ for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
         --filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=running" \
         --output text --query 'Reservations[].Instances[].PublicIpAddress')
 	if [ -z "${EXTERNAL_IP}" ]; then
-		sleep 30
+		sleep 20
 	else
     	if [ "${INSTANCE}" = "controller-0" ]; then
 		  while [ -z "${MAIN_CONTROLLER_INTERNAL_IP}" ]; do

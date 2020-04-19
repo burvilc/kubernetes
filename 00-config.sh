@@ -16,7 +16,7 @@ CLUSTER_INSTALL_METHOD="KUBEADM"
 echo "export CLUSTER_INSTALL_METHOD=$CLUSTER_INSTALL_METHOD" >> set-var.sh
 
 #-> move cleanup flag here.  If set to 1, will delete AWS resources rght after testing is done or after failure of any component in this script.
-CLEANUP=1
+CLEANUP=0
 echo "export CLEANUP=$CLEANUP" >> set-var.sh
 
 #-> Number of controllers, workers.  NOTE: NUM_CONTROLLERS greater than 1 will trigger an HA setup for controllers, i.e. where additional controller nodes are added as control plane and not worker nodes.
