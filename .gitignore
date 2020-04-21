@@ -8,5 +8,9 @@ tmp*
 *.tar
 *.zip
 *.id_rsa
+*.json
 *.kubeconfig
+*.yaml
 set-var.sh
+crt.txt
+.kube

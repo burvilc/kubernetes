@@ -20,7 +20,7 @@ CLEANUP=0
 echo "export CLEANUP=$CLEANUP" >> set-var.sh
 
 #-> Number of controllers, workers.  NOTE: NUM_CONTROLLERS greater than 1 will trigger an HA setup for controllers, i.e. where additional controller nodes are added as control plane and not worker nodes.
-NUM_CONTROLLERS=2
+NUM_CONTROLLERS=1
 NUM_WORKERS=2
 echo "export NUM_CONTROLLERS=$NUM_CONTROLLERS" >> set-var.sh
 echo "export NUM_WORKERS=$NUM_WORKERS" >> set-var.sh
