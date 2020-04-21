@@ -71,6 +71,7 @@ ls -l 01-provision-instances.sh.log
 
 for SCRIPT in $STEP_SCRIPTS
 do
+    echo "================================================================"
 	echo "RUNNING $SCRIPT"
 	bash -xv $SCRIPT > "${SCRIPT}.log" 2>&1
 	RETVAL=$?
