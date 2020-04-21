@@ -1,5 +1,6 @@
 #/bin/bash
 
+RETVAL=0
 # Use io1 if doing E2E tests or if performance config chosen
 if [ \( "${USE_CASE}" = "PERF" \) -o  \( "${WHICH_TESTS}" = "SMOKE_AND_E2E" \) ]; then
 	MAPPING='{"DeviceName": "/dev/sda1", "Ebs": {"VolumeSize": 8, "VolumeType": "io1", "Iops" : 600 },  "NoDevice": "" }'
@@ -90,6 +91,7 @@ for i in $(seq 0 $MAX_CONTROLLER_I) ; do
   aws ec2 modify-instance-attribute --instance-id ${instance_id} --no-source-dest-check
   aws ec2 create-tags --resources ${instance_id} --tags "Key=Name,Value=controller-${i}"
   TARGET_GROUP_IPS+="Id=${IP} "
+  INSTANCE_ID_controller-${i}=$instance_id
   echo "controller-${i} created "
 done
 
@@ -137,6 +139,7 @@ for i in $(seq 0 $MAX_WORKER_I); do
     --output text --query 'Instances[].InstanceId')
   aws ec2 modify-instance-attribute --instance-id ${instance_id} --no-source-dest-check
   aws ec2 create-tags --resources ${instance_id} --tags "Key=Name,Value=worker-${i}"
+  INSTANCE_ID_worker-${i}=$instance_id
   echo "worker-${i} created"
 done
 
@@ -154,6 +157,14 @@ echo "Waiting for instances to be up..."
 for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
   EXTERNAL_IP=""
   while [ -z "${EXTERNAL_IP}" ]; do
+	INSTANCE_ID="INSTANCE_ID_${INSTANCE}"
+    FAILURE_STATE=$(aws ec2 describe-instances \
+        --filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=terminated" \
+        --output text --query 'Reservations[].Instances[].StateTransitionReason')
+	if [ ! -z "${FAILURE_STATE}" ]; then
+		echo "Instance $INSTANCE terminated with reason $FAILURE_STATE. Setting non-zero exit code."
+		RETVAL=1
+	fi
     EXTERNAL_IP=$(aws ec2 describe-instances \
         --filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=running" \
         --output text --query 'Reservations[].Instances[].PublicIpAddress')
@@ -174,4 +185,4 @@ for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
   echo "Instance ${INSTANCE} is running at external IP ${EXTERNAL_IP}"
 done
 
-
+exit $RETVAL
