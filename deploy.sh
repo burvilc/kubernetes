@@ -14,7 +14,7 @@ CMDS["01-provision-instances.sh"]="grep 'running at' 01-provision-instances.sh.l
 CMDS["02-certs.sh"]=""
 CMDS["02-use_kubeadm-initialize.sh"]=""
 CMDS["02-use_kubeadm-kubelet-setup.sh"]=""
-CMDS["02-use_kubeadm_install_cluster.sh"]="echo 'NODES and PODs:'; tail -30 02-use_kubeadm_install_cluster.sh.log | egrep -A 30 'kubectl get nodes'"
+CMDS["02-use_kubeadm_install_cluster.sh"]="echo 'NODES and PODs:'; tail -30 02-use_kubeadm_install_cluster.sh.log | egrep -A 30 'kubectl get nodes; kubectl get pods'"
 CMDS["03-generate-config-files.sh"]=""
 CMDS["04-encryption-keys.sh"]=""
 CMDS["05-bootstrapping-etcd.sh"]=""
@@ -102,5 +102,5 @@ done
 echo "Done."
 
 # Turn prompting for ssh key back on
-rm -f ~/.ssh/config *.log *.json *.kubeconfig *.yaml crt.txt
+rm -f ~/.ssh/config *.json *.kubeconfig *.yaml crt.txt
 date
