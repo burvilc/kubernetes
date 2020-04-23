@@ -60,6 +60,16 @@ Done.
 Tue Apr 21 18:50:06 PDT 2020
 </pre>
 
+Once deployed, you should be able to ssh to your nodes, deploy pods, etc. as needed.  If you would like to delete the resources deployed and haven't set the CLEANUP flag in 00-config.sh to 1, run the teardown.sh script.
+
+<pre>
+barnabas:aws burvil$ ./teardown.sh
+Wed Apr 22 22:47:14 PDT 2020
+Tearing down instances and supporting infrastructure for kubernetes ...
+Wed Apr 22 22:49:47 PDT 2020
+</pre>
+
+
 KNOWN BUGS/TODO
 =======
 1. Code is in need of refactoring, e.g. functions, modules, etc.
@@ -74,6 +84,7 @@ TROUBLESHOOTING
 1. Check the log files for each iteration.  Sometimes errors in one script may be due to a previous script having issues.
 2. Check that configuration values are set correctly in 00-config.sh.
 3. Check the AWS console for errors, and there aren't duplicate resources provisioned.  Per the previous section, resources may not have cleaned up from the last run. 
+4. If you cannot ssh to the servers, i.e. to the IP addresses in your deploy.sh output, ensure that your IP address is correct and is what AWS will see when you try to connect. 
 
 CONTACT INFORMATION
 =======
