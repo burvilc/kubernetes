@@ -1,5 +1,23 @@
+DESCRIPTION
+=======
+This code is based initially on [Kubernetes the Hard Way](https://github.com/prabhatsharma/kubernetes-the-hard-way-aws).  However, as I soon found out that the process is essentially a learning tool for the [CKA exam](https://www.cncf.io/certification/cka/) and not an officially supported method of installation, I focused more of my efforts on installation with kubeadm.  Using kubeadm is documented at the official Kubernetes site at [https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/install-kubeadm/](here) and [https://kubernetes.io/docs/setup/production-environment/tools/kubeadm/create-cluster-kubeadm/](here). I used this information and other sites to write this code.  
 
+Note that this code is by no means production ready.  My main intent was and is to provide a reasobly stable, secure and reliable method to deploy a Kubernetes cluster into AWS, and the code meets that requirement.  Suggestions for improvement are always welcome :)
+    
+CONFIGURATION/INSTALLATION
+=======
+1. Login to a system with bash 4.x or above.  
+2. Get access to an AWS account. If needed, register for [AWS Free Tier](https://aws.amazon.com/free/?all-free-tier.sort-by=item.additionalFields.SortRank&all-free-tier.sort-order=asc).
+3. Install awscli (see this [AWS website](ihttps://aws.amazon.com/cli/) for details).
+4. Configure AWS (see step 3) for a region, with the necessary credentials.
+5. Perform a git clone of this repository to a locally available directory.
+6. Edit 00-config.sh with appropriate values for your situation.  Note that running end-to-end tests will take 1-2 hours, and thus incur slightly higher costs, and that the t2.medium instance type required for Kubernetes to work (i.e. 2 CPUs/machine) will not be free under the free tier.
 
+OPERATION
+=======
+An example run is as follows. Note that the output may be different, depending on configuration options chosen.
+
+<pre>
 barnabas:aws burvil$ ./deploy.sh
 Tue Apr 21 18:32:59 PDT 2020
 Note: resources will be left up after deployment.  To cleanup, run teardown.sh.
@@ -34,8 +52,29 @@ weave-net-jct6d                        2/2     Running   0          7m50s
 weave-net-lqwmx                        2/2     Running   1          3m4s
 
 -rw-r--r--@ 1 burvil  staff   100K Apr 21 18:49 02-use_kubeadm_install_cluster.sh.log
+
 ================================================================
 RUNNING 11-smoke-tests.sh
 -rw-r--r--  1 burvil  staff    31K Apr 21 18:50 11-smoke-tests.sh.log
 Done.
 Tue Apr 21 18:50:06 PDT 2020
+</pre>
+
+KNOWN BUGS/TODO
+=======
+1. Code is in need of refactoring, e.g. functions, modules, etc.
+2. As noted earlier, installation via Kubernetes the Hard Way is not fully working; it currently hangs upon bootstrapping the control plane.  Given that it's not an officially supported method, further troubleshooting may not make sense. 
+3. Support OS versions besides Ubuntu. Currently, the variable in the config file doesn't do anything. 
+4. Specify specific version(s) of Kubernetes to install, e.g. to match/recreate a given environment.
+5. The 12-cleanup.sh script sometimes doesn't completely delete resources properly.
+6. Scripts to shutdown/startup cluster nodes, i.e. if CLEANUP is set to 0. 
+
+TROUBLESHOOTING
+=======
+1. Check the log files for each iteration.  Sometimes errors in one script may be due to a previous script having issues.
+2. Check that configuration values are set correctly in 00-config.sh.
+3. Check the AWS console for errors, and there aren't duplicate resources provisioned.  Per the previous section, resources may not have cleaned up from the last run. 
+
+CONTACT INFORMATION
+=======
+[https://www.linkedin.com/in/burvil/] (https://www.linkedin.com/in/burvil/)

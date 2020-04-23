@@ -6,7 +6,7 @@ rm -f set-var.sh
 #-> what tests to run
 #	SMOKE or SMOKE_AND_E2E
 #  If E2E tests run, need io1 EBS volumes, i.e. PERF 
-#  E2E tests take 1-1.5 hours, and could mean associated additional AWS costs.
+#  E2E tests take 1-1.5 hours, and could mean associated additional AWS costs.  Note also that this will require USE_CASE=PERF, otherwise the instances will be deployed with gp2 EBS volumes, which will run out of credits quickly and cause the system to hang.
 WHICH_TESTS="SMOKE"
 echo "export WHICH_TESTS=$WHICH_TESTS" >> set-var.sh
 
@@ -61,7 +61,7 @@ echo "export MYIP=$MYIP" >> set-var.sh
 
 #############################################################
 # Following variables need to be accounted for in script; below show the current configuration that is hard coded
-#-> e2e test: kubetest or sonobuoy.  Currently, only sonobuoy is working. kubetest seems to require a google cloud account, which requires giving credit card info to Google and other setup.  
+#-> e2e test: kubetest or sonobuoy.  Currently, only sonobuoy is working. kubetest seems to require a google cloud account, which requires giving credit card info to Google and other setup. 
 E2E_TEST_TOOL="SONOBUOY"
 echo "export E2E_TEST_TOOL=$E2E_TEST_TOOL" >> set-var.sh
 
