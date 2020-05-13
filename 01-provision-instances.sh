@@ -189,6 +189,7 @@ for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
 	fi
   done
   echo "Instance ${INSTANCE} is running at external IP ${EXTERNAL_IP}"
+  echo "Connect with -- ssh -i \"kubernetes.id_rsa\" ubuntu@${EXTERNAL_IP}"
 done
 
 exit $RETVAL

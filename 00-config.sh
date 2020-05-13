@@ -56,7 +56,7 @@ INSTANCE_TYPE="t2.medium"
 echo "export INSTANCE_TYPE=$INSTANCE_TYPE" >> set-var.sh
 
 #IP address to restrict access as a source address. It should be in CIDR notation, i.e. /32 for one IP address. This value will be put into the security group to mitigate unauthorized access from the Internet.  Note that setting this to "0.0.0.0/0" is a security risk, and should only be done for troubleshooting purposes.
-MYIP="x.x.x.x/32"
+MYIP="my-ip-address-here/32"
 echo "export MYIP=$MYIP" >> set-var.sh
 
 #############################################################
