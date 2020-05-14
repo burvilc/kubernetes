@@ -25,14 +25,19 @@ for ID in $INSTANCE_IDS; do
    		IP=$(aws ec2 describe-instances \
 			--instance-ids $ID \
         	--output text --query 'Reservations[].Instances[].PublicIpAddress')
+#barnabas:aws burvil$ aws ec2 describe-instances --instance-id i-0cf0e11eda7a3e5a2 --output text --query 'Reservations[].Instances[].Tags[?Key==`Name`].Value[]'
+		NAME=$(aws ec2 describe-instances \
+			--instance-ids $ID \
+			--output text --query 'Reservations[].Instances[].Tags[?Key==`Name`].Value[]')
 		sleep 5
 	done
 	while [ -z "${INSTANCE_UP}" ]; do
-		echo "Instance $ID started, connecting at $IP"
+		echo "Instance $NAME (id $ID) started, connecting at $IP"
 		UPTIME=`ssh -i "kubernetes.id_rsa" ubuntu@${IP} ${CMD}`
 		if [ $? -eq 0 ]; then
 			INSTANCE_UP=1
 			echo "Instance $ID (${IP}) running - ${UPTIME}"
+			echo " --> Connect with:  ssh -i \"kubernetes.id_rsa\" ubuntu@${IP}"
 			continue
 		fi
 		sleep 5

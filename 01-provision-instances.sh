@@ -159,6 +159,7 @@ MAIN_CONTROLLER_INTERNAL_IP=""
 echo "Waiting for instances to be up..."
 for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
   EXTERNAL_IP=""
+  echo "Checking instance $INSTANCE --"
   while [ -z "${EXTERNAL_IP}" ]; do
     if [[ "${INSTANCE}" =~ (controller)-([0-9]+) ]]; then
         i="${BASH_REMATCH[2]}"

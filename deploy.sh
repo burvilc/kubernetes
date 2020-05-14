@@ -38,6 +38,7 @@ CMDS["12-cleanup.sh"]=""
 bash 00-config.sh
 . set-var.sh
 
+
 #Select install with Kubeadm or method specified in config
 if [ "$CLUSTER_INSTALL_METHOD" = "HARD_WAY" ]; then 
 	STEP_SCRIPTS="01-provision-instances.sh 02-certs.sh 03-generate-config-files.sh 04-encryption-keys.sh 05-bootstrapping-etcd.sh 06-bootstrapping-control-plane.sh 07-bootstrapping-worker-nodes.sh 08-kubectl-remote-access.sh 09-pod-network-routes.sh 10-dns-addon.sh "
