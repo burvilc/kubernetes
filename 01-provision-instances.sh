@@ -9,6 +9,8 @@ else
 fi
 echo $MAPPING
 
+INSTANCE_IPS=""
+
 #List of instance IDs for controllers, to be used later for target group
 TARGET_GROUP_IPS=""
 
@@ -166,6 +168,7 @@ for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
     fi
     FAILURE_STATE=$(aws ec2 describe-instances \
         --filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=terminated" \
+	    --instance-id ${INSTANCE_ID} \
         --output text --query 'Reservations[].Instances[].StateTransitionReason')
 	if [ ! -z "${FAILURE_STATE}" ]; then
 		echo "Instance $INSTANCE (id ${INSTANCE_ID}) terminated with reason $FAILURE_STATE. Setting non-zero exit code."
@@ -188,8 +191,10 @@ for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
 		break # break out of loop if have external IP, whether controller-0 or not
 	fi
   done
-  echo "Instance ${INSTANCE} is running at external IP ${EXTERNAL_IP}"
-  echo "Connect with -- ssh -i \"kubernetes.id_rsa\" ubuntu@${EXTERNAL_IP}"
+  echo "Instance ${INSTANCE} is running --> Connect to it with -- ssh -i \"kubernetes.id_rsa\" ubuntu@${EXTERNAL_IP}"
+  INSTANCE_IPS+="  ${EXTERNAL_IP}" 
+  echo "${INSTANCE_IPS}"
 done
 
+echo "export INSTANCE_IPS=\"${INSTANCE_IPS}\"" >> set-var.sh
 exit $RETVAL

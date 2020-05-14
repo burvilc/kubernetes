@@ -10,7 +10,7 @@ echo "StrictHostKeyChecking no" > ~/.ssh/config
 declare -A CMDS
 
 CMDS["00-config.sh"]=""
-CMDS["01-provision-instances.sh"]="grep 'running at' 01-provision-instances.sh.log | egrep '^Instance'"
+CMDS["01-provision-instances.sh"]="grep 'is running ' 01-provision-instances.sh.log | egrep '^Instance'"
 CMDS["02-certs.sh"]=""
 CMDS["02-use_kubeadm-initialize.sh"]=""
 CMDS["02-use_kubeadm-kubelet-setup.sh"]=""
@@ -40,9 +40,9 @@ bash 00-config.sh
 
 #Select install with Kubeadm or method specified in config
 if [ "$CLUSTER_INSTALL_METHOD" = "HARD_WAY" ]; then 
-	STEP_SCRIPTS="02-certs.sh 03-generate-config-files.sh 04-encryption-keys.sh 05-bootstrapping-etcd.sh 06-bootstrapping-control-plane.sh 07-bootstrapping-worker-nodes.sh 08-kubectl-remote-access.sh 09-pod-network-routes.sh 10-dns-addon.sh "
+	STEP_SCRIPTS="01-provision-instances.sh 02-certs.sh 03-generate-config-files.sh 04-encryption-keys.sh 05-bootstrapping-etcd.sh 06-bootstrapping-control-plane.sh 07-bootstrapping-worker-nodes.sh 08-kubectl-remote-access.sh 09-pod-network-routes.sh 10-dns-addon.sh "
 elif [ "$CLUSTER_INSTALL_METHOD" = "KUBEADM" ]; then 
-	STEP_SCRIPTS="02-use_kubeadm_install_cluster.sh "
+	STEP_SCRIPTS="01-provision-instances.sh 02-use_kubeadm_install_cluster.sh "
 else
 	STEP_SCRIPTS=""
 fi
@@ -64,17 +64,9 @@ else
 	echo "Note: resources will be left up after deployment.  To cleanup, run teardown.sh."
 fi
 
-echo "Running the following scripts: 01-provision-instances.sh ${STEP_SCRIPTS}"
+echo "Running the following scripts: ${STEP_SCRIPTS}"
 
 echo "Starting deployment, configuration and validation of Kubernetes cluster."
-echo "Deploying instances with 01-provision-instances.sh..."
-SCRIPT="01-provision-instances.sh"
-bash -xv $SCRIPT > "${SCRIPT}.log" 2>&1
-if [ ! -z "${CMDS[${SCRIPT}]}" ]; then
-	eval "${CMDS[${SCRIPT}]}"
-fi
-ls -l 01-provision-instances.sh.log
-. set-var.sh
 
 # Run each script in steps needed
 for SCRIPT in $STEP_SCRIPTS
@@ -87,6 +79,9 @@ do
 		eval "${CMDS[${SCRIPT}]}"  # show results from script
 	fi
 	ls -lh "${SCRIPT}.log"
+    if [ "${SCRIPT}" = "01-provision-instances.sh" ]; then
+		. set-var.sh
+	fi
 	if [ $RETVAL -ne 0 ]; then  # If script failed, note it and recover appropriately
 		echo "ERROR: $SCRIPT Failed. See ${SCRIPT} for details.  "
 		if [ -n "${CLEANUP}" -a "${CLEANUP}" -eq 1 ]; then
