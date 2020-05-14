@@ -69,6 +69,118 @@ Tearing down instances and supporting infrastructure for kubernetes ...
 Wed Apr 22 22:49:47 PDT 2020
 </pre>
 
+If you decide to leave your EC2 instances up and running, you can shut them down and bring them up as needed, to avoid unnecessary AWS charges.  Note that the public facing IP addresses will change each time this happens. 
+
+The following are example runs of the startup and shutdown scripts to bring up or down the EC2 instances.  They take the information from the instance_info.csv file that was created by the provisioning script upon deployment. 
+
+To shutdown:
+<pre>
+$ ./shutdown.sh
+Thu May 14 12:40:37 PDT 2020
+Shutting down instances...
+{
+    "StoppingInstances": [
+        {
+            "CurrentState": {
+                "Code": 64,
+                "Name": "stopping"
+            },
+            "InstanceId": "instance-1-id-here",
+            "PreviousState": {
+                "Code": 16,
+                "Name": "running"
+            }
+        },
+        {
+            "CurrentState": {
+                "Code": 64,
+                "Name": "stopping"
+            },
+            "InstanceId": "instance-2-id-here",
+            "PreviousState": {
+                "Code": 16,
+                "Name": "running"
+            }
+        },
+        {
+            "CurrentState": {
+                "Code": 64,
+                "Name": "stopping"
+            },
+            "InstanceId": "instance-3-id-here",
+            "PreviousState": {
+                "Code": 16,
+                "Name": "running"
+            }
+        }
+    ]
+}
+Instance instance-3-id-here stopped.
+Instance instance-2-id-here stopped.
+Instance instance-1-id-here stopped.
+</pre>
+
+To startup:
+<pre>
+$ ./startup.sh
+Thu May 14 12:51:15 PDT 2020
+Starting instances...
+instance-1-id-here instance-2-id-here instance-3-id-here
+{
+    "StartingInstances": [
+        {
+            "CurrentState": {
+                "Code": 0,
+                "Name": "pending"
+            },
+            "InstanceId": "instance-3-id-here",
+            "PreviousState": {
+                "Code": 80,
+                "Name": "stopped"
+            }
+        },
+        {
+            "CurrentState": {
+                "Code": 0,
+                "Name": "pending"
+            },
+            "InstanceId": "instance-1-id-here",
+            "PreviousState": {
+                "Code": 80,
+                "Name": "stopped"
+            }
+        },
+        {
+            "CurrentState": {
+                "Code": 0,
+                "Name": "pending"
+            },
+            "InstanceId": "instance-2-id-here",
+            "PreviousState": {
+                "Code": 80,
+                "Name": "stopped"
+            }
+        }
+    ]
+}
+Starting Instance ID instance-1-id-here
+Instance instance-1-id-here started, connecting at ip-address-1-here
+Warning: Permanently added 'ip-address-1-here' (ECDSA) to the list of known hosts.
+Instance instance-1-id-here (ip-address-1-here) running -  19:51:45 up 0 min,  0 users,  load average: 0.45, 0.10, 0.03
+Starting Instance ID instance-2-id-here
+Instance instance-2-id-here started, connecting at ip-address-2-here
+ssh: connect to host ip-address-2-here port 22: Connection refused
+Instance instance-2-id-here started, connecting at ip-address-2-here
+Warning: Permanently added 'ip-address-2-here' (ECDSA) to the list of known hosts.
+Instance instance-2-id-here (ip-address-2-here) running -  19:52:05 up 0 min,  0 users,  load average: 0.59, 0.13, 0.04
+Starting Instance ID instance-3-id-here
+Instance instance-3-id-here started, connecting at ip-address-3-here
+Warning: Permanently added 'ip-address-3-here' (ECDSA) to the list of known hosts.
+Instance instance-3-id-here (ip-address-3-here) running -  19:52:14 up 0 min,  0 users,  load average: 0.83, 0.18, 0.06
+Thu May 14 12:52:14 PDT 2020
+
+</pre>
+
 
 KNOWN BUGS/TODO
 =======

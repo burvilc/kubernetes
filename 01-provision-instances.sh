@@ -9,7 +9,8 @@ else
 fi
 echo $MAPPING
 
-INSTANCE_IPS=""
+INSTANCE_INFO_FILE="instance_info.csv"
+rm -f $INSTANCE_INFO_FILE
 
 #List of instance IDs for controllers, to be used later for target group
 TARGET_GROUP_IPS=""
@@ -145,7 +146,7 @@ for i in $(seq 0 $MAX_WORKER_I); do
   echo "worker-${i} created"
 done
 
-for v in VPC_ID SUBNET_ID INTERNET_GATEWAY_ID ROUTE_TABLE_ID SECURITY_GROUP_ID LOAD_BALANCER_ARN TARGET_GROUP_ARN KUBERNETES_PUBLIC_ADDRESS IMAGE_ID
+for v in VPC_ID SUBNET_ID INTERNET_GATEWAY_ID ROUTE_TABLE_ID SECURITY_GROUP_ID LOAD_BALANCER_ARN TARGET_GROUP_ARN KUBERNETES_PUBLIC_ADDRESS IMAGE_ID INSTANCE_INFO_FILE
 do
 	echo "$v"
 	export $v
@@ -192,9 +193,7 @@ for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do
 	fi
   done
   echo "Instance ${INSTANCE} is running --> Connect to it with -- ssh -i \"kubernetes.id_rsa\" ubuntu@${EXTERNAL_IP}"
-  INSTANCE_IPS+="  ${EXTERNAL_IP}" 
-  echo "${INSTANCE_IPS}"
+  echo "${INSTANCE},${INSTANCE_ID},`date`" >> $INSTANCE_INFO_FILE 
 done
 
-echo "export INSTANCE_IPS=\"${INSTANCE_IPS}\"" >> set-var.sh
 exit $RETVAL

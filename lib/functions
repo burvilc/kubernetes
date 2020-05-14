@@ -6,16 +6,15 @@ function GetInstanceInfo {
 	rm -f changed_vars.sh
 	IFS=','
 	unset INSTANCES
-	unset INSTANCE_IPS
 	unset INSTANCE_IDS
 	[ ! -f $INPUT ] && { echo "$INPUT file not found"; exit 99; }
-	while read INSTANCE INSTANCE_IP INSTANCE_ID DATE_STARTED; do
+	while read INSTANCE INSTANCE_ID DATE_STARTED; do
 		INSTANCES+=" $INSTANCE"
 		INSTANCE_IDS+=" $INSTANCE_ID"
-		INSTANCE_IPS+=" $INSTANCE_IP"
+		echo "Found $INSTANCE (instance ID $INSTANCE_ID), which was deployed on $DATE_STARTED"
 	done < $INPUT
 	IFS=$OLDIFS
 	echo "unset INSTANCES; export INSTANCES=\"${INSTANCES}\"" >> changed_vars.sh
-	echo "unset INSTANCE_IPS; export INSTANCE_IPS=\"${INSTANCE_IPS}\"" >> changed_vars.sh
 	echo "unset INSTANCE_IDS; export INSTANCE_IDS=\"${INSTANCE_IDS}\"" >> changed_vars.sh
 }
+

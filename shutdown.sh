@@ -1,17 +1,31 @@
 #!/bin/bash
 
 date
-echo "StrictHostKeyChecking no" > ~/.ssh/config 
 
 . set-var.sh
+. lib/functions; 
+GetInstanceInfo $INSTANCE_INFO_FILE
+. changed_vars.sh
+rm -f changed_vars.sh
+
 echo "Shutting down instances..."
 CMD="sudo init 0"
 #CMD="df"
 
-for IP in $INSTANCE_IPS; do 
-	ssh -i "kubernetes.id_rsa" ubuntu@${IP} ${CMD} 
+aws ec2 stop-instances --instance-ids ${INSTANCE_IDS}
+
+for ID in $INSTANCE_IDS; do 
+		STATE_CODE=314
+		while [ "${STATE_CODE}" -ne 80 ]; do 
+        	STATE_CODE=$(aws ec2 describe-instances \
+            	--instance-ids $ID \
+            	--output text --query 'Reservations[].Instances[].State.Code')
+        	sleep 5
+		done
+		echo "Instance $ID stopped."
 done
 
-
-rm -f ~/.ssh/config
 date
+
+
+
