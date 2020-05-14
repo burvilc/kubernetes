@@ -8,6 +8,7 @@ echo "StrictHostKeyChecking no" > ~/.ssh/config
 GetInstanceInfo $INSTANCE_INFO_FILE
 . changed_vars.sh
 rm -f changed_vars.sh
+rm -f connect.txt
 echo "Starting instances..."
 CMD="uptime"
 #CMD="df"
@@ -37,7 +38,7 @@ for ID in $INSTANCE_IDS; do
 		if [ $? -eq 0 ]; then
 			INSTANCE_UP=1
 			echo "Instance $ID (${IP}) running - ${UPTIME}"
-			echo " --> Connect with:  ssh -i \"kubernetes.id_rsa\" ubuntu@${IP}"
+			echo " --> Connect to $NAME with:  ssh -i \"kubernetes.id_rsa\" ubuntu@${IP}" | tee -a connect.txt
 			continue
 		fi
 		sleep 5
