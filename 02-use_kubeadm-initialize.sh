@@ -1,12 +1,10 @@
 #!/bin/bash -xv
 
-# Initialize control plane - following steps only on master
+# Initialize control plane - following steps only on master.  
 sudo kubeadm config images pull
-if [ ${NUM_CONTROLLERS} -le 1 ]; then
+if [ ${NUM_CONTROLLERS} -le 1 ]; then  # If single master
 	CMD="sudo kubeadm init"
-else
-	#CMD="sudo kubeadm init --control-plane-endpoint $MAIN_CONTROLLER_INTERNAL_IP --apiserver-advertise-address  $MAIN_CONTROLLER_INTERNAL_IP"
-	#CMD="sudo kubeadm init --control-plane-endpoint ${MAIN_CONTROLLER_INTERNAL_IP}:6443" 
+else  # If multi-master
 	CMD="sudo kubeadm init --control-plane-endpoint ${KUBERNETES_PUBLIC_ADDRESS}:443 --upload-certs "
 fi
 $CMD > ~/init.txt 2>&1
@@ -15,16 +13,16 @@ RETVAL=$?
 CERT=`egrep '\-\-certificate-key' ~/init.txt | egrep '\-\-control-plane' | awk {'print $3'}`
 sleep 300
 if [ $RETVAL -ne 0 ]; then
-	echo "Troubleshooting information:"
+	echo "ERROR: Not initialized properly. Troubleshooting information:"
 	systemctl status kubelet
 	journalctl -xeu kubelet
-	#$CMD --v=10
 fi
 
 sudo kubeadm config print init-defaults
 sudo which kubeadm
 which kubeadm
 
+# Configure client
 mkdir -p $HOME/.kube
 ls -l /etc/kubernetes/admin.conf
 sudo cp -i /etc/kubernetes/admin.conf $HOME/.kube/config
@@ -40,12 +38,6 @@ done
 
 if [ ! -z "${CERT}" ]; then
 	echo $CERT > ~/crt.txt
+else
+	echo "WARNING: No certificate information generated for joining additional nodes to cluster."
 fi
-	
-#kubeadm join --token $TOKEN <control-plane-host>:<control-plane-port> --discovery-token-ca-cert-hash sha256:${HASH}
-# For worker nodes - run this from worker node:
-#echo "kubeadm join --discovery-token $TOKEN --discovery-token-ca-cert-hash $HASH 1.2.3.4:6443" 
-
-# For control plane nodes:
-#echo "kubeadm join --discovery-token $TOKEN --discovery-token-ca-cert-hash sha256:1234..cdef --control-plane 1.2.3.4:6443" > controller_join.sh
-
