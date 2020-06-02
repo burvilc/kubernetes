@@ -54,8 +54,9 @@ cat <<EOF | sudo tee /etc/apt/sources.list.d/kubernetes.list
 deb https://apt.kubernetes.io/ kubernetes-xenial main
 EOF
 sudo apt-get update
-sudo apt-get install -y -o Dpkg::Options::="--force-confnew"  kubelet kubeadm kubectl docker-ce
+sudo apt-get install -y -o Dpkg::Options::="--force-confnew"  docker-ce
 sudo apt-get -y update && sudo apt-get -y upgrade
+sudo apt-get install -y -o Dpkg::Options::="--force-confnew"  kubelet="${KUBERNETES_VERSION}-00" kubeadm="${KUBERNETES_VERSION}-00" kubectl="${KUBERNETES_VERSION}-00" 
 sudo apt-mark hold kubelet kubeadm kubectl
 
 kubeadm version -o short

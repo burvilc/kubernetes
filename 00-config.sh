@@ -59,6 +59,10 @@ echo "export INSTANCE_TYPE=$INSTANCE_TYPE" >> set-var.sh
 MYIP="my-ip-address-here/32"
 echo "export MYIP=$MYIP" >> set-var.sh
 
+#Version of kubernetes (kubeadm, kubectl, etc.) to install
+KUBERNETES_VERSION="1.18.2"
+echo "export KUBERNETES_VERSION=$KUBERNETES_VERSION" >> set-var.sh
+
 #############################################################
 # Following variables need to be accounted for in script; below show the current configuration that is hard coded
 #-> e2e test: kubetest or sonobuoy.  Currently, only sonobuoy is working. kubetest seems to require a google cloud account, which requires giving credit card info to Google and other setup. 
