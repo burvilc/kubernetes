@@ -19,8 +19,6 @@ if [ $RETVAL -ne 0 ]; then
 fi
 
 sudo kubeadm config print init-defaults
-sudo which kubeadm
-which kubeadm
 
 # Configure client
 mkdir -p $HOME/.kube

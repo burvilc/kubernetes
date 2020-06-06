@@ -78,7 +78,7 @@ chmod 600 kubernetes.id_rsa
 
 #for i in 0 1 2; do
 for i in $(seq 0 $MAX_CONTROLLER_I) ; do
-  IP=10.0.1.1${i}
+  IP=10.0.1.${CLUSTER_NUMBER}${i}
   instance_id=$(aws ec2 run-instances \
     --associate-public-ip-address \
     --image-id ${IMAGE_ID} \

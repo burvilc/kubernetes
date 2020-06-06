@@ -69,6 +69,9 @@ sudo systemctl daemon-reload
 sudo systemctl restart kubelet
 sudo systemctl restart docker 
 
+sudo which kubeadm
+which kubeadm
+
 #Checking at this point doesn't make sense, as the kubelet is expected to be stuck in a loop until it's bootstrapped.
 #sleep 60
 #sudo systemctl status kubelet

@@ -12,10 +12,20 @@ for INSTANCE in $CONTROLLER_NAMES $WORKER_NAMES; do
   	EXTERNAL_IP=$(aws ec2 describe-instances \
     	--filters "Name=tag:Name,Values=${INSTANCE}" "Name=instance-state-name,Values=running" \
     	--output text --query 'Reservations[].Instances[].PublicIpAddress')
+	sleep 60
   done
   if [ "${INSTANCE}" == "controller-0" ]; then
-    SCRIPTS="${KUBELET_SCRIPT} ${INIT_SCRIPT}"
-    CMD="source set-var.sh; bash -xv $KUBELET_SCRIPT; bash -xv $INIT_SCRIPT" 
+    	SCRIPTS="${KUBELET_SCRIPT} ${INIT_SCRIPT}"
+    	CMD="source set-var.sh; bash -xv $KUBELET_SCRIPT" 
+		if [ "$INSTALL_K8S_ONLY" != "YES" ]; then
+    		CMD="source set-var.sh; bash -xv $KUBELET_SCRIPT; bash -xv $INIT_SCRIPT" 
+    		scp -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP:~/crt.txt . 
+			CERT=`cat crt.txt`
+    		ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "rm -f ~/crt.txt"  # Copy and remotely execute commands
+   		fi 
+    MAIN_CONTROLLER_EXTERNAL_IP=$EXTERNAL_IP
+    # Copy files, so can run kubectl on main controller node
+    scp -i kubernetes.id_rsa -r .kube ubuntu@${MAIN_CONTROLLER_EXTERNAL_IP}:.
   else 
     SCRIPTS="${KUBELET_SCRIPT}"
     CMD="source set-var.sh; bash -xv $KUBELET_SCRIPT" 
@@ -26,17 +36,14 @@ for INSTANCE in $CONTROLLER_NAMES $WORKER_NAMES; do
   # Copy files, initialize each node 
   scp -i kubernetes.id_rsa set-var.sh $SCRIPTS ubuntu@$EXTERNAL_IP:~/
   ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "${CMD}"  # Copy and remotely execute commands
-  if [ "${INSTANCE}" == "controller-0" ]; then
-    scp -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP:~/crt.txt . 
-	CERT=`cat crt.txt`
-    ssh -i kubernetes.id_rsa ubuntu@$EXTERNAL_IP "rm -f ~/crt.txt"  # Copy and remotely execute commands
-    MAIN_CONTROLLER_EXTERNAL_IP=$EXTERNAL_IP
-  fi	
 done
 
-# Copy files, so can run kubectl on main controller node
-scp -i kubernetes.id_rsa -r ubuntu@${MAIN_CONTROLLER_EXTERNAL_IP}:.kube .
 
+# If installing only, stop here
+if [ "${INSTALL_K8S_ONLY}" == "YES" ]; then
+	echo "Exiting, only installation specified."
+	exit 0
+fi
 
 # Join each node to cluster
 for INSTANCE in $WORKER_NAMES $CONTROLLER_NAMES; do

@@ -12,7 +12,7 @@ echo "export WHICH_TESTS=$WHICH_TESTS" >> set-var.sh
 
 # Cluster install method: kubeadm or Kubernetes the Hard way.  Hard way may have issues with bootstrapping etcd and other subsequent issues.  Hard way is also not officially supported.
 # NONE or KUBEADM or HARD_WAY.  Use NONE if only want to deploy instances
-CLUSTER_INSTALL_METHOD="KUBEADM"
+CLUSTER_INSTALL_METHOD=""
 echo "export CLUSTER_INSTALL_METHOD=$CLUSTER_INSTALL_METHOD" >> set-var.sh
 
 #-> move cleanup flag here.  If set to 1, will delete AWS resources rght after testing is done or after failure of any component in this script.
@@ -21,7 +21,7 @@ echo "export CLEANUP=$CLEANUP" >> set-var.sh
 
 #-> Number of controllers, workers.  NOTE: NUM_CONTROLLERS greater than 1 will trigger an HA setup for controllers, i.e. where additional controller nodes are added as control plane and not worker nodes.
 NUM_CONTROLLERS=1
-NUM_WORKERS=2
+NUM_WORKERS=1
 echo "export NUM_CONTROLLERS=$NUM_CONTROLLERS" >> set-var.sh
 echo "export NUM_WORKERS=$NUM_WORKERS" >> set-var.sh
 
@@ -62,6 +62,14 @@ echo "export MYIP=$MYIP" >> set-var.sh
 #Version of kubernetes (kubeadm, kubectl, etc.) to install
 KUBERNETES_VERSION="1.18.2"
 echo "export KUBERNETES_VERSION=$KUBERNETES_VERSION" >> set-var.sh
+
+#INDEX number of cluster - 1 or above
+CLUSTER_NUMBER=1
+echo "export CLUSTER_NUMBER=$CLUSTER_NUMBER" >> set-var.sh
+
+#install only, don't init cluster
+INSTALL_K8S_ONLY="YES"
+echo "export INSTALL_K8S_ONLY=$INSTALL_K8S_ONLY" >> set-var.sh
 
 #############################################################
 # Following variables need to be accounted for in script; below show the current configuration that is hard coded

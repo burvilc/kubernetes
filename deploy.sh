@@ -42,14 +42,14 @@ bash 00-config.sh
 #Select install with Kubeadm or method specified in config
 if [ "$CLUSTER_INSTALL_METHOD" = "HARD_WAY" ]; then 
 	STEP_SCRIPTS="01-provision-instances.sh 02-certs.sh 03-generate-config-files.sh 04-encryption-keys.sh 05-bootstrapping-etcd.sh 06-bootstrapping-control-plane.sh 07-bootstrapping-worker-nodes.sh 08-kubectl-remote-access.sh 09-pod-network-routes.sh 10-dns-addon.sh "
-elif [ "$CLUSTER_INSTALL_METHOD" = "KUBEADM" ]; then 
+elif [ "$CLUSTER_INSTALL_METHOD" = "KUBEADM" -o "$INSTALL_K8S_ONLY" = "YES" ]; then 
 	STEP_SCRIPTS="01-provision-instances.sh 02-use_kubeadm_install_cluster.sh "
 else
-	STEP_SCRIPTS=""
+	STEP_SCRIPTS="01-provision-instances.sh"
 fi
 
 # Select which tests to run
-if [ ! -z "$STEP_SCRIPTS" ]; then
+if [ ! -z "$STEP_SCRIPTS" -a "$CLUSTER_INSTALL_METHOD" = "KUBEADM" ]; then
 	if [ "$WHICH_TESTS" = "SMOKE" ]; then 
 		STEP_SCRIPTS+=" 11-smoke-tests.sh "
 	elif [ "$WHICH_TESTS" = "SMOKE_AND_E2E" ]; then 
