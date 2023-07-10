@@ -60,12 +60,14 @@ aws ec2 authorize-security-group-ingress --group-id ${SECURITY_GROUP_ID} --proto
 # Compute Instances
 #Instance Image
 # Need to have aws command line configured to output to json; run aws configure to set this.
-IMAGE_ID=$(aws ec2 describe-images --owners 099720109477 \
-  --filters \
-  'Name=root-device-type,Values=ebs' \
-  'Name=architecture,Values=x86_64' \
-  'Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*' \
-  | jq -r '.Images|sort_by(.Name)[-1]|.ImageId')
+
+LATEST_UBUNTU_VERSION=$(lynx -dump https://wiki.ubuntu.com/Releases | grep LTS | grep 'Ubuntu ' | head -1 | awk {'print $2'} | sed 's/\.[0-9]*$//g')
+IMAGE_ID=$(aws ec2 describe-images --query 'sort_by(Images,&CreationDate)[-1].ImageId' --filters \
+        'Name=root-device-type,Values=ebs' \
+        'Name=architecture,Values=x86_64' \
+        "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-*${LATEST_UBUNTU_VERSION}*-amd64-server-*")
+echo "Found Image ID ${IMAGE_ID}"
+
 
 ######################
 #SSH Key Pair

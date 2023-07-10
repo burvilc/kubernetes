@@ -12,7 +12,7 @@ echo "export WHICH_TESTS=$WHICH_TESTS" >> set-var.sh
 
 # Cluster install method: kubeadm or Kubernetes the Hard way.  Hard way may have issues with bootstrapping etcd and other subsequent issues.  Hard way is also not officially supported.
 # NONE or KUBEADM or HARD_WAY.  Use NONE if only want to deploy instances
-CLUSTER_INSTALL_METHOD=""
+CLUSTER_INSTALL_METHOD="KUBEADM"
 echo "export CLUSTER_INSTALL_METHOD=$CLUSTER_INSTALL_METHOD" >> set-var.sh
 
 #-> move cleanup flag here.  If set to 1, will delete AWS resources rght after testing is done or after failure of any component in this script.
@@ -56,11 +56,11 @@ INSTANCE_TYPE="t2.medium"
 echo "export INSTANCE_TYPE=$INSTANCE_TYPE" >> set-var.sh
 
 #IP address to restrict access as a source address. It should be in CIDR notation, i.e. /32 for one IP address. This value will be put into the security group to mitigate unauthorized access from the Internet.  Note that setting this to "0.0.0.0/0" is a security risk, and should only be done for troubleshooting purposes.
-MYIP="my-ip-address-here/32"
+MYIP="$(dig -6 TXT +short o-o.myaddr.l.google.com @ns1.google.com | sed 's/\"//g')/32"
 echo "export MYIP=$MYIP" >> set-var.sh
 
 #Version of kubernetes (kubeadm, kubectl, etc.) to install
-KUBERNETES_VERSION="1.18.2"
+KUBERNETES_VERSION="1.27.3"
 echo "export KUBERNETES_VERSION=$KUBERNETES_VERSION" >> set-var.sh
 
 #INDEX number of cluster - 1 or above
