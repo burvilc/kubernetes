@@ -67,8 +67,8 @@ echo "export KUBERNETES_VERSION=$KUBERNETES_VERSION" >> set-var.sh
 CLUSTER_NUMBER=1
 echo "export CLUSTER_NUMBER=$CLUSTER_NUMBER" >> set-var.sh
 
-#install only, don't init cluster
-INSTALL_K8S_ONLY="YES"
+#install only, don't init cluster FOR YES.  Otherwise, do initialize cluster
+INSTALL_K8S_ONLY="NO	"
 echo "export INSTALL_K8S_ONLY=$INSTALL_K8S_ONLY" >> set-var.sh
 
 #############################################################

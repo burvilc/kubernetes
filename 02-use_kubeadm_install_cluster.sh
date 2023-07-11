@@ -41,7 +41,7 @@ done
 
 # If installing only, stop here
 if [ "${INSTALL_K8S_ONLY}" == "YES" ]; then
-	echo "Exiting, only installation specified."
+	echo "Exiting, only installation specified. Not joining cluster."
 	exit 0
 fi
 
